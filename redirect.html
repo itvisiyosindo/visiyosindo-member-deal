@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mengarahkan...</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --secondary: #0f172a;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+      --muted: #64748b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #ffffff;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .redirect-card {
+      display: none;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    h2 {
+      font-size: 1.35rem;
+      color: var(--secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      word-break: break-all;
+    }
+    .error-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #fef2f2;
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+      font-size: 1.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="redirect-card" id="redirect-box">
+    <div class="error-icon">&times;</div>
+    <h2 id="redirect-title">Link Tidak Ditemukan</h2>
+    <p id="redirect-desc">Tautan belum dibuat atau sudah dihapus.</p>
+    <a href="/" style="display:inline-block;padding:10px 22px;background:#0d9488;color:#ffffff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;margin-top:8px;">Menuju Beranda</a>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/js/config.js?v=8"></script>
+  <script src="/js/storage.js?v=8"></script>
+  <script>
+    (async function handleRedirect() {
+      const urlParams = new URLSearchParams(window.location.search);
+      let slug = urlParams.get("go");
+
+      if (!slug) {
+        const pathSegments = window.location.pathname.split("/").filter(Boolean);
+        const lastSegment = pathSegments[pathSegments.length - 1];
+        if (lastSegment && !lastSegment.endsWith(".html") && !lastSegment.endsWith(".php")) {
+          slug = lastSegment;
+        }
+      }
+
+      if (!slug) {
+        showError("Slug Tidak Ditemukan", "Tidak ada parameter tautan yang ditentukan.");
+        return;
+      }
+
+      slug = slug.trim();
+
+      try {
+        const link = await Storage.getLinkBySlug(slug);
+
+        if (link && link.targetUrl) {
+          Storage.incrementClicks(slug);
+          window.location.replace(link.targetUrl);
+          return;
+        }
+
+        showError("Link Tidak Ditemukan", `Tautan "/${slug}" belum dibuat atau sudah dihapus.`);
+      } catch (err) {
+        console.error(err);
+        showError("Terjadi Kesalahan", err.message);
+      }
+
+      function showError(title, message) {
+        document.getElementById("redirect-title").textContent = title;
+        document.getElementById("redirect-desc").textContent = message;
+        document.getElementById("redirect-box").style.display = "block";
+      }
+    })();
+  </script>
+</body>
+</html>

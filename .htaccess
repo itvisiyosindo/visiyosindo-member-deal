@@ -1,4 +1,4 @@
-# Portal Member Visi Academy - PT Visi Yosindo Medikal
+# Portal Member Visi Academy & Link Manager - PT Visi Yosindo Medikal
 Options -Indexes
 ServerSignature Off
 
@@ -6,11 +6,38 @@ ServerSignature Off
     RewriteEngine On
     RewriteBase /
 
-    # Pastikan index.php adalah default
+    # Pastikan default index adalah index.php (Portal Member)
     DirectoryIndex index.php
+
+    # Jangan rewrite file atau folder fisik yang benar-benar ada
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
 
     # Lindungi file tersembunyi
     RewriteRule ^\.(.*)$ - [F]
+
+    # Jangan ubah rute asset statis
+    RewriteRule ^css/ - [L]
+    RewriteRule ^js/ - [L]
+
+    # Rute khusus hidden Link Manager
+    RewriteRule ^link-manager/?$ link-manager.php [L,QSA]
+    RewriteRule ^links/?$ link-manager.php [L,QSA]
+    RewriteRule ^tautan/?$ link-manager.php [L,QSA]
+
+    # Pretty URL untuk halaman Member Portal
+    RewriteRule ^login/?$ login.php [L,QSA]
+    RewriteRule ^register/?$ register.php [L,QSA]
+    RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+    RewriteRule ^ajukan-deal/?$ ajukan-deal.php [L,QSA]
+    RewriteRule ^tracking-deal/?$ tracking-deal.php [L,QSA]
+    RewriteRule ^profil/?$ profil.php [L,QSA]
+    RewriteRule ^logout/?$ logout.php [L,QSA]
+
+    # Semua slug shortlink lainnya (contoh: /katalog, /GR-MEETING, /wa-admin, /PendaftaranPelatihan)
+    # Alihkan ke mesin pengalihan redirect.html?go=slug
+    RewriteRule ^([a-zA-Z0-9-_]+)/?$ redirect.html?go=$1 [L,QSA]
 </IfModule>
 
 # Keamanan header standar
