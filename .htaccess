@@ -1,0 +1,21 @@
+# Portal Member Visi Academy - PT Visi Yosindo Medikal
+Options -Indexes
+ServerSignature Off
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Pastikan index.php adalah default
+    DirectoryIndex index.php
+
+    # Lindungi file tersembunyi
+    RewriteRule ^\.(.*)$ - [F]
+</IfModule>
+
+# Keamanan header standar
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
