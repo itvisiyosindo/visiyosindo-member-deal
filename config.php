@@ -253,7 +253,7 @@ function notify_marketing_new_deal($deal_data, $member_data) {
              "• *Faskes Tujuan*: {$instansi_tujuan}\n" .
              "• *PIC / Kontak di Faskes*: {$contact_person}\n" .
              "• *Spesifikasi / Catatan*: {$spesifikasi}\n\n" .
-             "Silakan tim marketing memvalidasi dan menindaklanjuti prospek ini di ERP Kantor:\n" .
+             "Silakan tim marketing memvalidasi dan menindaklanjuti prospek ini di Sistem Office:\n" .
              "👉 https://office.visiyosindo.id/member_visiacademy\n\n" .
              "_Sistem Office PT Visi Yosindo Medikal_";
 
