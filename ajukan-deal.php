@@ -76,14 +76,14 @@ require_once __DIR__ . '/header.php';
 <div class="max-w-3xl mx-auto my-6">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-navy-900 to-slate-800 p-6 sm:p-8 text-white">
-            <div class="flex items-center gap-3 mb-2">
-                <span class="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center border border-teal-500/30 text-lg">
-                    <i class="fa-solid fa-file-invoice-dollar"></i>
-                </span>
+        <div class="bg-gradient-to-r from-navy-950 via-vym-900 to-vym-800 p-6 sm:p-8 text-white">
+            <div class="flex items-center gap-3.5 mb-2">
+                <div class="w-12 h-12 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-md flex-shrink-0">
+                    <img src="assets/logo.png" alt="PT Visi Yosindo Medikal Logo" class="w-full h-full object-contain">
+                </div>
                 <div>
                     <h1 class="text-xl sm:text-2xl font-bold">Form Pengajuan Kebutuhan Alkes</h1>
-                    <p class="text-xs text-slate-300">Daftarkan prospek kebutuhan alat kesehatan untuk mendapatkan komisi referral</p>
+                    <p class="text-xs text-vym-200">Daftarkan prospek kebutuhan alat kesehatan untuk mendapatkan komisi referral</p>
                 </div>
             </div>
         </div>
@@ -100,7 +100,7 @@ require_once __DIR__ . '/header.php';
                 <!-- Info Produk -->
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">
-                        <i class="fa-solid fa-microscope text-teal-600"></i> Detail Alat Kesehatan
+                        <i class="fa-solid fa-microscope text-vym-600"></i> Detail Alat Kesehatan
                     </h3>
                     <div class="space-y-4">
                         <div>
@@ -109,7 +109,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="nama_produk" list="alkesSuggestions" value="<?= htmlspecialchars($form['nama_produk']) ?>" required
                                 placeholder="Ketik atau pilih rekomendasi (misal: USG Doppler 4D, X-Ray Stationary 500mA, C-Arm)"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             <datalist id="alkesSuggestions">
                                 <option value="USG Color Doppler 4D">
                                 <option value="USG Portable B/W & Color">
@@ -133,7 +133,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="instansi_tujuan" value="<?= htmlspecialchars($form['instansi_tujuan']) ?>"
                                 placeholder="Contoh: RSUD Daerah X / Klinik Utama Sehat Mandiri"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                         </div>
                     </div>
                 </div>
@@ -141,7 +141,7 @@ require_once __DIR__ . '/header.php';
                 <!-- Estimasi Nilai & Komisi -->
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">
-                        <i class="fa-solid fa-calculator text-teal-600"></i> Nilai Pengadaan & Estimasi Komisi
+                        <i class="fa-solid fa-calculator text-vym-600"></i> Nilai Pengadaan & Estimasi Komisi
                     </h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -154,7 +154,7 @@ require_once __DIR__ . '/header.php';
                                 </span>
                                 <input type="text" id="estimasiNilaiInput" name="estimasi_nilai" required
                                     placeholder="Contoh: 150.000.000"
-                                    class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
                             <span class="text-[11px] text-slate-500 mt-1 block">Perkiraan pagu anggaran / harga pengadaan.</span>
                         </div>
@@ -166,7 +166,7 @@ require_once __DIR__ . '/header.php';
                             <div class="relative">
                                 <input type="number" step="0.1" min="1" max="10" id="persenKomisiInput" name="persen_komisi" 
                                     value="<?= htmlspecialchars($form['persen_komisi']) ?>"
-                                    class="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                                 <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400 font-bold text-xs">
                                     %
                                 </span>
@@ -176,18 +176,18 @@ require_once __DIR__ . '/header.php';
                     </div>
 
                     <!-- Live Calculation Card -->
-                    <div class="mt-4 p-4 rounded-xl bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 flex items-center justify-between">
+                    <div class="mt-4 p-4 rounded-xl bg-gradient-to-r from-vym-50 via-blue-50 to-indigo-50 border border-vym-200 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center text-lg shadow-sm">
+                            <div class="w-10 h-10 rounded-xl bg-vym-600 text-white flex items-center justify-center text-lg shadow-sm">
                                 <i class="fa-solid fa-coins"></i>
                             </div>
                             <div>
-                                <span class="text-xs font-bold text-teal-900 uppercase tracking-wider block">Perkiraan Komisi Yang Anda Dapatkan</span>
-                                <span class="text-xs text-teal-700">Dihitung otomatis: Nilai Pengadaan &times; Persentase Komisi</span>
+                                <span class="text-xs font-bold text-vym-900 uppercase tracking-wider block">Perkiraan Komisi Yang Anda Dapatkan</span>
+                                <span class="text-xs text-vym-700">Dihitung otomatis: Nilai Pengadaan &times; Persentase Komisi</span>
                             </div>
                         </div>
                         <div class="text-right">
-                            <span id="calculatedNominal" class="text-xl sm:text-2xl font-black text-teal-700">Rp 0</span>
+                            <span id="calculatedNominal" class="text-xl sm:text-2xl font-black text-vym-700">Rp 0</span>
                         </div>
                     </div>
                 </div>
@@ -195,7 +195,7 @@ require_once __DIR__ . '/header.php';
                 <!-- Kontak PIC & Spesifikasi -->
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">
-                        <i class="fa-solid fa-circle-info text-teal-600"></i> Informasi Tambahan Prospek
+                        <i class="fa-solid fa-circle-info text-vym-600"></i> Informasi Tambahan Prospek
                     </h3>
                     <div class="space-y-4">
                         <div>
@@ -204,7 +204,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="contact_person" value="<?= htmlspecialchars($form['contact_person']) ?>"
                                 placeholder="Contoh: Pak Herman (Kabid Yanmed) - 0813xxxxxx"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             <span class="text-[11px] text-slate-500 mt-1 block">Membantu tim Visi Yosindo berkoordinasi langsung dengan pihak berwenang di RS.</span>
                         </div>
 
@@ -214,13 +214,13 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <textarea name="spesifikasi" rows="3"
                                 placeholder="Contoh: Butuh probe convex + linear, rencana pengadaan triwulan 1, butuh izin BAPETEN dan instalasi."
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition"><?= htmlspecialchars($form['spesifikasi']) ?></textarea>
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition"><?= htmlspecialchars($form['spesifikasi']) ?></textarea>
                         </div>
                     </div>
                 </div>
 
                 <div class="pt-2 flex flex-col sm:flex-row items-center gap-3">
-                    <button type="submit" class="w-full sm:flex-1 bg-teal-600 hover:bg-teal-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-teal-600/20 transition flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full sm:flex-1 bg-vym-600 hover:bg-vym-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-vym-600/20 transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-paper-plane"></i> Kirim Pengajuan Kebutuhan Alkes
                     </button>
                     <a href="dashboard.php" class="w-full sm:w-auto text-center px-6 py-3.5 rounded-xl border border-slate-300 font-semibold text-slate-700 hover:bg-slate-50 transition text-sm">
@@ -246,7 +246,6 @@ function updateCalculation() {
     const numVal = parseFloat(rawVal) || 0;
     const persen = parseFloat(persenInput.value) || 0;
     
-    // Format input field with thousand separators
     if (rawVal) {
         nilaiInput.value = parseInt(rawVal, 10).toLocaleString('id-ID');
     }

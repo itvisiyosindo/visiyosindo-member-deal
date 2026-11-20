@@ -54,7 +54,7 @@ require_once __DIR__ . '/header.php';
             <p class="text-xs text-slate-500 mt-1">Pantau perkembangan prospek alat kesehatan dan kepastian komisi referral Anda</p>
         </div>
         <div>
-            <a href="ajukan-deal.php" class="bg-teal-600 hover:bg-teal-500 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2 text-sm">
+            <a href="ajukan-deal.php" class="bg-vym-600 hover:bg-vym-700 text-white font-bold px-4 py-2.5 rounded-xl shadow-sm transition flex items-center gap-2 text-sm">
                 <i class="fa-solid fa-circle-plus"></i> Ajukan Alkes Baru
             </a>
         </div>
@@ -65,7 +65,7 @@ require_once __DIR__ . '/header.php';
         <!-- Status Tabs -->
         <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
             <a href="tracking-deal.php?status=all<?= !empty($search) ? '&q=' . urlencode($search) : '' ?>"
-                class="px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap <?= $status_filter === 'all' ? 'bg-navy-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' ?>">
+                class="px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap <?= $status_filter === 'all' ? 'bg-navy-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' ?>">
                 Semua (<?= (int)$counts['total_all'] ?>)
             </a>
             <a href="tracking-deal.php?status=Pending<?= !empty($search) ? '&q=' . urlencode($search) : '' ?>"
@@ -90,14 +90,14 @@ require_once __DIR__ . '/header.php';
                     <i class="fa-solid fa-magnifying-glass"></i>
                 </span>
                 <input type="text" name="q" value="<?= htmlspecialchars($search) ?>" placeholder="Cari alkes / RS / catatan..."
-                    class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                    class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
             </div>
             <?php if (!empty($search)): ?>
                 <a href="tracking-deal.php?status=<?= urlencode($status_filter) ?>" class="text-slate-400 hover:text-slate-600 p-1 text-xs" title="Reset Pencarian">
                     <i class="fa-solid fa-xmark"></i>
                 </a>
             <?php endif; ?>
-            <button type="submit" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            <button type="submit" class="bg-navy-950 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">
                 Cari
             </button>
         </form>
@@ -129,11 +129,11 @@ require_once __DIR__ . '/header.php';
                                     <?= !empty($search) || $status_filter !== 'all' ? 'Coba ubah kata kunci pencarian atau reset filter status.' : 'Daftarkan kebutuhan alkes sekarang untuk memulai referral komisi Anda.' ?>
                                 </p>
                                 <?php if (!empty($search) || $status_filter !== 'all'): ?>
-                                    <a href="tracking-deal.php" class="inline-flex items-center gap-1.5 mt-4 text-xs font-bold text-teal-600 hover:underline">
+                                    <a href="tracking-deal.php" class="inline-flex items-center gap-1.5 mt-4 text-xs font-bold text-vym-600 hover:underline">
                                         <i class="fa-solid fa-rotate-left"></i> Reset Filter
                                     </a>
                                 <?php else: ?>
-                                    <a href="ajukan-deal.php" class="inline-flex items-center gap-2 mt-4 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition">
+                                    <a href="ajukan-deal.php" class="inline-flex items-center gap-2 mt-4 bg-vym-600 hover:bg-vym-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition">
                                         <i class="fa-solid fa-circle-plus"></i> Ajukan Prospek Baru
                                     </a>
                                 <?php endif; ?>
@@ -158,7 +158,7 @@ require_once __DIR__ . '/header.php';
                                     <?= format_rupiah($deal['estimasi_nilai']) ?>
                                 </td>
                                 <td class="px-5 py-4 whitespace-nowrap">
-                                    <div class="font-black text-teal-700"><?= format_rupiah($deal['nominal_komisi']) ?></div>
+                                    <div class="font-black text-vym-700"><?= format_rupiah($deal['nominal_komisi']) ?></div>
                                     <div class="text-[11px] text-slate-400 font-semibold">(<?= number_format((float)$deal['persen_komisi'], 1) ?>%)</div>
                                 </td>
                                 <td class="px-5 py-4 whitespace-nowrap text-center">
@@ -188,7 +188,7 @@ require_once __DIR__ . '/header.php';
                                             'status' => $deal['status_deal'],
                                             'catatan' => $deal['catatan'] ?: 'Tidak ada catatan tambahan.'
                                         ])) ?>)"
-                                        class="text-xs font-bold text-teal-600 hover:text-teal-800 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg transition">
+                                        class="text-xs font-bold text-vym-600 hover:text-vym-800 bg-vym-50 hover:bg-vym-100 px-3 py-1.5 rounded-lg transition">
                                         <i class="fa-solid fa-eye mr-1"></i> Detail
                                     </button>
                                 </td>
@@ -204,10 +204,15 @@ require_once __DIR__ . '/header.php';
 <!-- Modal Detail Prospek -->
 <div id="detailModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all animate-fade-in">
-        <div class="bg-gradient-to-r from-navy-900 to-slate-800 p-5 text-white flex items-center justify-between">
-            <div>
-                <span id="modalId" class="text-xs font-mono font-bold text-teal-300 bg-teal-900/60 px-2 py-0.5 rounded">#DL-0000</span>
-                <h3 class="text-lg font-bold mt-1">Detail Prospek Referral</h3>
+        <div class="bg-gradient-to-r from-navy-950 via-vym-900 to-vym-800 p-5 text-white flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-white p-1 flex items-center justify-center">
+                    <img src="assets/logo.png" alt="PT Visi Yosindo Medikal Logo" class="w-full h-full object-contain">
+                </div>
+                <div>
+                    <span id="modalId" class="text-xs font-mono font-bold text-vym-300 bg-vym-900 px-2 py-0.5 rounded border border-vym-700/50">#DL-0000</span>
+                    <h3 class="text-base font-bold mt-0.5">Detail Prospek Referral</h3>
+                </div>
             </div>
             <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white p-1">
                 <i class="fa-solid fa-xmark text-lg"></i>
@@ -227,7 +232,7 @@ require_once __DIR__ . '/header.php';
                 </div>
                 <div>
                     <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Komisi Member</span>
-                    <span id="modalKomisi" class="text-sm font-black text-teal-600"></span>
+                    <span id="modalKomisi" class="text-sm font-black text-vym-700"></span>
                     <span id="modalPersen" class="text-xs text-slate-500"></span>
                 </div>
                 <div>
@@ -247,7 +252,7 @@ require_once __DIR__ . '/header.php';
         </div>
 
         <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
-            <button onclick="closeDetailModal()" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
+            <button onclick="closeDetailModal()" class="bg-navy-950 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition">
                 Tutup
             </button>
         </div>
@@ -280,7 +285,6 @@ function closeDetailModal() {
     document.getElementById('detailModal').classList.add('hidden');
 }
 
-// Tutup modal jika klik di luar box
 document.getElementById('detailModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeDetailModal();

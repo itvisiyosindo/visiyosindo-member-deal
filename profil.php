@@ -84,20 +84,20 @@ require_once __DIR__ . '/header.php';
 
 <div class="max-w-4xl mx-auto my-6 space-y-6">
     <!-- Header Banner -->
-    <div class="bg-gradient-to-r from-navy-900 to-slate-800 rounded-3xl p-6 sm:p-8 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="bg-gradient-to-r from-navy-950 via-vym-900 to-vym-800 rounded-3xl p-6 sm:p-8 text-white shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-vym-800/60">
         <div class="flex items-center gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-teal-400 text-2xl font-black">
-                <i class="fa-solid fa-user-gear"></i>
+            <div class="w-16 h-16 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-md flex-shrink-0">
+                <img src="assets/logo.png" alt="PT Visi Yosindo Medikal Logo" class="w-full h-full object-contain">
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <span class="bg-teal-500/20 text-teal-300 text-xs font-mono font-bold px-2 py-0.5 rounded border border-teal-500/30">
+                    <span class="bg-vym-500/20 text-vym-200 text-xs font-mono font-bold px-2 py-0.5 rounded border border-vym-400/30">
                         <?= htmlspecialchars($member['kode_member']) ?>
                     </span>
-                    <span class="text-xs text-slate-300">Bergabung: <?= date('d M Y', strtotime($member['created_at'])) ?></span>
+                    <span class="text-xs text-vym-200">Bergabung: <?= date('d M Y', strtotime($member['created_at'])) ?></span>
                 </div>
                 <h1 class="text-2xl font-bold mt-1"><?= htmlspecialchars($member['nama_member']) ?></h1>
-                <p class="text-xs text-slate-300"><?= htmlspecialchars($member['institusi_asal'] ?: 'Member Visi Academy') ?></p>
+                <p class="text-xs text-vym-200"><?= htmlspecialchars($member['institusi_asal'] ?: 'Member Visi Academy') ?></p>
             </div>
         </div>
     </div>
@@ -120,9 +120,9 @@ require_once __DIR__ . '/header.php';
                     <div>
                         <div class="flex items-center justify-between pb-2 border-b border-slate-200 mb-4">
                             <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                                <i class="fa-solid fa-building-columns text-teal-600"></i> Rekening Pencairan Komisi
+                                <i class="fa-solid fa-building-columns text-vym-600"></i> Rekening Pencairan Komisi
                             </h2>
-                            <span class="text-[11px] font-semibold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200">
+                            <span class="text-[11px] font-semibold text-vym-700 bg-vym-50 px-2.5 py-0.5 rounded-full border border-vym-200">
                                 Sangat Penting
                             </span>
                         </div>
@@ -137,7 +137,7 @@ require_once __DIR__ . '/header.php';
                                 </label>
                                 <input type="text" name="nama_bank" list="bankListProfile" value="<?= htmlspecialchars($member['nama_bank'] ?? '') ?>"
                                     placeholder="Contoh: BCA / Mandiri"
-                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                                 <datalist id="bankListProfile">
                                     <option value="BCA">
                                     <option value="Bank Mandiri">
@@ -158,7 +158,7 @@ require_once __DIR__ . '/header.php';
                                 </label>
                                 <input type="text" name="no_rekening" value="<?= htmlspecialchars($member['no_rekening'] ?? '') ?>"
                                     placeholder="Contoh: 1234567890"
-                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
 
                             <div>
@@ -167,7 +167,7 @@ require_once __DIR__ . '/header.php';
                                 </label>
                                 <input type="text" name="atas_nama_rekening" value="<?= htmlspecialchars($member['atas_nama_rekening'] ?? '') ?>"
                                     placeholder="Sesuai buku tabungan"
-                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
                         </div>
                     </div>
@@ -175,7 +175,7 @@ require_once __DIR__ . '/header.php';
                     <!-- Bagian Data Personal -->
                     <div>
                         <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">
-                            <i class="fa-solid fa-id-card text-teal-600"></i> Informasi Pribadi & Faskes
+                            <i class="fa-solid fa-id-card text-vym-600"></i> Informasi Pribadi & Faskes
                         </h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="sm:col-span-2">
@@ -183,7 +183,7 @@ require_once __DIR__ . '/header.php';
                                     Nama Lengkap & Gelar <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="text" name="nama_member" value="<?= htmlspecialchars($member['nama_member']) ?>" required
-                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
 
                             <div>
@@ -191,7 +191,7 @@ require_once __DIR__ . '/header.php';
                                     No. WhatsApp <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="text" name="no_telp" value="<?= htmlspecialchars($member['no_telp']) ?>" required
-                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
 
                             <div>
@@ -199,7 +199,7 @@ require_once __DIR__ . '/header.php';
                                     Email <span class="text-rose-500">*</span>
                                 </label>
                                 <input type="email" name="email" value="<?= htmlspecialchars($member['email']) ?>" required
-                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
 
                             <div class="sm:col-span-2">
@@ -208,13 +208,13 @@ require_once __DIR__ . '/header.php';
                                 </label>
                                 <input type="text" name="institusi_asal" value="<?= htmlspecialchars($member['institusi_asal']) ?>"
                                     placeholder="Contoh: RSUD Pasar Minggu"
-                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
                         </div>
                     </div>
 
                     <div class="pt-2">
-                        <button type="submit" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3 rounded-xl shadow-md shadow-teal-600/20 transition flex items-center justify-center gap-2 text-sm">
+                        <button type="submit" class="w-full bg-vym-600 hover:bg-vym-700 text-white font-bold py-3 rounded-xl shadow-md shadow-vym-600/20 transition flex items-center justify-center gap-2 text-sm">
                             <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan Profil & Rekening
                         </button>
                     </div>
@@ -227,7 +227,7 @@ require_once __DIR__ . '/header.php';
             <!-- Form Ganti Password -->
             <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                 <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">
-                    <i class="fa-solid fa-key text-teal-600"></i> Ganti Password
+                    <i class="fa-solid fa-key text-vym-600"></i> Ganti Password
                 </h3>
                 <form action="profil.php" method="POST" class="space-y-4">
                     <input type="hidden" name="action" value="change_password">
@@ -237,7 +237,7 @@ require_once __DIR__ . '/header.php';
                             Password Saat Ini
                         </label>
                         <input type="password" name="password_lama" required
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                     </div>
 
                     <div>
@@ -246,7 +246,7 @@ require_once __DIR__ . '/header.php';
                         </label>
                         <input type="password" name="password_baru" required minlength="6"
                             placeholder="Minimal 6 karakter"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                     </div>
 
                     <div>
@@ -254,11 +254,11 @@ require_once __DIR__ . '/header.php';
                             Ulangi Password Baru
                         </label>
                         <input type="password" name="password_confirm" required minlength="6"
-                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                            class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                     </div>
 
                     <div class="pt-1">
-                        <button type="submit" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+                        <button type="submit" class="w-full bg-navy-950 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
                             <i class="fa-solid fa-lock"></i> Update Password
                         </button>
                     </div>
@@ -266,13 +266,20 @@ require_once __DIR__ . '/header.php';
             </div>
 
             <!-- Kartu Member Card -->
-            <div class="bg-gradient-to-br from-navy-950 to-slate-900 p-5 rounded-2xl border border-slate-800 text-white shadow-md relative overflow-hidden">
-                <div class="text-[11px] font-bold text-teal-400 uppercase tracking-widest mb-3">Visi Academy Member Card</div>
+            <div class="bg-gradient-to-br from-navy-950 via-vym-900 to-vym-800 p-5 rounded-2xl border border-vym-800/80 text-white shadow-md relative overflow-hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="text-[11px] font-bold text-vym-300 uppercase tracking-widest">Visi Academy Member Card</div>
+                    <div class="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center">
+                        <img src="assets/logo.png" alt="Logo" class="w-full h-full object-contain">
+                    </div>
+                </div>
                 <div class="text-base font-black tracking-wide"><?= htmlspecialchars($member['nama_member']) ?></div>
-                <div class="text-xs font-mono text-slate-300 mt-1"><?= htmlspecialchars($member['kode_member']) ?></div>
-                <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                <div class="text-xs font-mono text-vym-200 mt-1"><?= htmlspecialchars($member['kode_member']) ?></div>
+                <div class="mt-4 pt-3 border-t border-vym-700/50 flex items-center justify-between text-[11px] text-vym-200">
                     <span>PT Visi Yosindo Medikal</span>
-                    <span class="text-emerald-400 font-bold">Terverifikasi</span>
+                    <span class="text-emerald-400 font-bold flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check"></i> Terverifikasi
+                    </span>
                 </div>
             </div>
         </div>

@@ -13,11 +13,8 @@
   <nav class="navbar">
     <div class="nav-container">
       <div class="brand">
-        <div class="brand-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-          </svg>
+        <div class="brand-icon" style="background:#ffffff;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,0.1);border-radius:10px;">
+          <img src="assets/logo.png" alt="PT Visi Yosindo Medikal" style="width:100%;height:100%;object-fit:contain;">
         </div>
         <div>
           <span class="brand-name">Visiyosindo Link</span>

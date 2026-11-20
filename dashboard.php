@@ -39,29 +39,37 @@ require_once __DIR__ . '/header.php';
 
 <div class="space-y-6">
     <!-- Welcome Banner -->
-    <div class="bg-gradient-to-r from-navy-900 via-slate-900 to-teal-950 rounded-3xl p-6 sm:p-8 text-white shadow-md border border-slate-800 relative overflow-hidden">
+    <div class="bg-gradient-to-r from-navy-950 via-vym-900 to-vym-800 rounded-3xl p-6 sm:p-8 text-white shadow-md border border-vym-800/60 relative overflow-hidden">
+        <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-vym-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="bg-teal-500/20 text-teal-300 text-xs font-bold px-2.5 py-1 rounded-full border border-teal-500/30">
-                        <i class="fa-solid fa-id-card-clip mr-1"></i> <?= htmlspecialchars($member['kode_member']) ?>
-                    </span>
-                    <span class="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2.5 py-1 rounded-full border border-emerald-500/30">
-                        <i class="fa-solid fa-circle-check mr-1"></i> Member Aktif
-                    </span>
+            <div class="flex items-start sm:items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-white p-1.5 shadow-md flex items-center justify-center flex-shrink-0">
+                    <img src="assets/logo.png" alt="PT Visi Yosindo Medikal Logo" class="w-full h-full object-contain">
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                    Halo, <?= htmlspecialchars($member['nama_member']) ?>!
-                </h1>
-                <p class="text-slate-300 text-xs sm:text-sm mt-1">
-                    <?= htmlspecialchars($member['institusi_asal'] ?: 'Kemitraan Visi Academy') ?> • Selamat datang di portal referral komisi alat kesehatan PT Visi Yosindo Medikal.
-                </p>
+                <div>
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="bg-vym-500/20 text-vym-200 text-xs font-bold px-2.5 py-0.5 rounded-full border border-vym-400/30 font-mono">
+                            <i class="fa-solid fa-id-card-clip mr-1"></i> <?= htmlspecialchars($member['kode_member']) ?>
+                        </span>
+                        <span class="bg-emerald-500/20 text-emerald-300 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                            <i class="fa-solid fa-circle-check mr-1"></i> Member Aktif
+                        </span>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                        Halo, <?= htmlspecialchars($member['nama_member']) ?>!
+                    </h1>
+                    <p class="text-vym-200 text-xs sm:text-sm mt-0.5">
+                        <?= htmlspecialchars($member['institusi_asal'] ?: 'Kemitraan Visi Academy') ?> • Selamat datang di portal referral komisi alat kesehatan PT Visi Yosindo Medikal.
+                    </p>
+                </div>
             </div>
+
             <div class="flex flex-wrap items-center gap-3">
-                <a href="ajukan-deal.php" class="bg-teal-600 hover:bg-teal-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-teal-600/30 transition flex items-center gap-2 text-sm">
+                <a href="ajukan-deal.php" class="bg-vym-600 hover:bg-vym-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-vym-600/30 transition flex items-center gap-2 text-sm">
                     <i class="fa-solid fa-circle-plus"></i> Ajukan Alkes Baru
                 </a>
-                <a href="profil.php" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-3 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm">
+                <a href="profil.php" class="bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-semibold px-4 py-3 rounded-xl border border-slate-700 transition flex items-center gap-2 text-sm">
                     <i class="fa-solid fa-building-columns"></i> Rekening
                 </a>
             </div>
@@ -128,7 +136,7 @@ require_once __DIR__ . '/header.php';
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
             <div class="flex items-center justify-between mb-3">
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Prospek Diajukan</span>
-                <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg">
+                <div class="w-10 h-10 rounded-xl bg-vym-50 text-vym-600 flex items-center justify-center text-lg">
                     <i class="fa-solid fa-boxes-stacked"></i>
                 </div>
             </div>
@@ -163,7 +171,7 @@ require_once __DIR__ . '/header.php';
             <?php else: ?>
                 <div class="text-sm font-bold text-amber-600 mb-1">Belum Diatur</div>
                 <p class="text-xs text-slate-500 mb-2">Tambahkan nomor rekening untuk transfer komisi.</p>
-                <a href="profil.php" class="text-xs text-teal-600 font-bold hover:underline">
+                <a href="profil.php" class="text-xs text-vym-600 font-bold hover:underline">
                     + Input Rekening Sekarang
                 </a>
             <?php endif; ?>
@@ -178,7 +186,7 @@ require_once __DIR__ . '/header.php';
                 <p class="text-xs text-slate-500 mt-0.5">Daftar pengajuan terakhir yang Anda daftarkan ke Visi Yosindo Medikal</p>
             </div>
             <div class="flex items-center gap-2">
-                <a href="tracking-deal.php" class="text-xs font-bold text-teal-600 hover:text-teal-700 hover:underline flex items-center gap-1">
+                <a href="tracking-deal.php" class="text-xs font-bold text-vym-600 hover:text-vym-700 hover:underline flex items-center gap-1">
                     Lihat Semua Prospek <i class="fa-solid fa-arrow-right text-[10px]"></i>
                 </a>
             </div>
@@ -207,7 +215,7 @@ require_once __DIR__ . '/header.php';
                                 <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                                     Apakah Rumah Sakit, Klinik, atau rekan sejawat Anda membutuhkan alat kesehatan baru?
                                 </p>
-                                <a href="ajukan-deal.php" class="inline-flex items-center gap-2 mt-4 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition">
+                                <a href="ajukan-deal.php" class="inline-flex items-center gap-2 mt-4 bg-vym-600 hover:bg-vym-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-sm transition">
                                     <i class="fa-solid fa-circle-plus"></i> Ajukan Prospek Sekarang
                                 </a>
                             </td>
@@ -232,7 +240,7 @@ require_once __DIR__ . '/header.php';
                                 <td class="px-5 py-4 whitespace-nowrap text-xs text-slate-600 font-semibold">
                                     <?= number_format((float)$deal['persen_komisi'], 1) ?>%
                                 </td>
-                                <td class="px-5 py-4 whitespace-nowrap font-bold text-teal-600">
+                                <td class="px-5 py-4 whitespace-nowrap font-bold text-vym-600">
                                     <?= format_rupiah($deal['nominal_komisi']) ?>
                                 </td>
                                 <td class="px-5 py-4 whitespace-nowrap text-center">

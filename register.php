@@ -95,12 +95,15 @@ require_once __DIR__ . '/header.php';
 <div class="max-w-2xl mx-auto my-6 sm:my-10">
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <!-- Header -->
-        <div class="bg-gradient-to-r from-navy-900 to-slate-800 p-6 sm:p-8 text-white text-center">
-            <span class="inline-block bg-teal-500/20 text-teal-300 text-xs font-semibold px-3 py-1 rounded-full border border-teal-500/30 mb-2">
+        <div class="bg-gradient-to-r from-navy-950 via-vym-900 to-vym-800 p-6 sm:p-8 text-white text-center">
+            <div class="w-16 h-16 bg-white rounded-2xl p-1.5 flex items-center justify-center mx-auto mb-3 shadow-md">
+                <img src="assets/logo.png" alt="PT Visi Yosindo Medikal Logo" class="w-full h-full object-contain">
+            </div>
+            <span class="inline-block bg-vym-500/20 text-vym-200 text-xs font-semibold px-3 py-1 rounded-full border border-vym-400/30 mb-2">
                 Program Referral PT Visi Yosindo Medikal
             </span>
             <h2 class="text-2xl font-bold">Registrasi Member Visi Academy</h2>
-            <p class="text-xs text-slate-300 mt-1 max-w-md mx-auto">
+            <p class="text-xs text-vym-200 mt-1 max-w-md mx-auto">
                 Khusus Dokter, Radiografer, dan Alumni Pelatihan untuk kemitraan pengadaan alat kesehatan.
             </p>
         </div>
@@ -117,7 +120,7 @@ require_once __DIR__ . '/header.php';
                 <!-- Data Pribadi & Kontak -->
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">
-                        <i class="fa-solid fa-user-doctor text-teal-600"></i> Informasi Pribadi & Instansi
+                        <i class="fa-solid fa-user-doctor text-vym-600"></i> Informasi Pribadi & Instansi
                     </h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div class="sm:col-span-2">
@@ -126,7 +129,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="nama_member" value="<?= htmlspecialchars($form['nama_member']) ?>" required
                                 placeholder="Contoh: dr. Budi Santoso, Sp.Rad / Ahmad Fauzi, S.Tr.Kes"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                         </div>
 
                         <div>
@@ -135,7 +138,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="no_telp" value="<?= htmlspecialchars($form['no_telp']) ?>" required
                                 placeholder="Contoh: 08123456789"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             <span class="text-[11px] text-slate-500 mt-1 block">Digunakan untuk login & konfirmasi referral.</span>
                         </div>
 
@@ -145,7 +148,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="email" name="email" value="<?= htmlspecialchars($form['email']) ?>" required
                                 placeholder="Contoh: dokter@email.com"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                         </div>
 
                         <div class="sm:col-span-2">
@@ -154,7 +157,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="institusi_asal" value="<?= htmlspecialchars($form['institusi_asal']) ?>"
                                 placeholder="Contoh: RSUD Pasar Minggu / RS Siloam / Klinik Utama Medika"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                         </div>
                     </div>
                 </div>
@@ -162,7 +165,7 @@ require_once __DIR__ . '/header.php';
                 <!-- Keamanan Password -->
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">
-                        <i class="fa-solid fa-lock text-teal-600"></i> Keamanan Akun
+                        <i class="fa-solid fa-lock text-vym-600"></i> Keamanan Akun
                     </h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
@@ -171,7 +174,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="password" name="password" required minlength="6"
                                 placeholder="Minimal 6 karakter"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -179,7 +182,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="password" name="password_confirm" required minlength="6"
                                 placeholder="Ulangi password"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                         </div>
                     </div>
                 </div>
@@ -188,7 +191,7 @@ require_once __DIR__ . '/header.php';
                 <div>
                     <div class="flex items-center justify-between pb-2 border-b border-slate-200 mb-4">
                         <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                            <i class="fa-solid fa-building-columns text-teal-600"></i> Rekening Pencairan Komisi
+                            <i class="fa-solid fa-building-columns text-vym-600"></i> Rekening Pencairan Komisi
                         </h3>
                         <span class="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Bisa diisi nanti</span>
                     </div>
@@ -199,7 +202,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="nama_bank" list="bankList" value="<?= htmlspecialchars($form['nama_bank']) ?>"
                                 placeholder="Pilih / Ketik Bank"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             <datalist id="bankList">
                                 <option value="BCA">
                                 <option value="Bank Mandiri">
@@ -220,7 +223,7 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="no_rekening" value="<?= htmlspecialchars($form['no_rekening']) ?>"
                                 placeholder="Contoh: 1234567890"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                         </div>
 
                         <div>
@@ -229,13 +232,13 @@ require_once __DIR__ . '/header.php';
                             </label>
                             <input type="text" name="atas_nama_rekening" value="<?= htmlspecialchars($form['atas_nama_rekening']) ?>"
                                 placeholder="Sesuai buku tabungan"
-                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:bg-white transition">
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                         </div>
                     </div>
                 </div>
 
                 <div class="pt-2">
-                    <button type="submit" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-teal-600/20 transition flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full bg-vym-600 hover:bg-vym-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-vym-600/25 transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-circle-check"></i> Daftar & Aktifkan Member
                     </button>
                 </div>
@@ -243,7 +246,7 @@ require_once __DIR__ . '/header.php';
 
             <div class="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-500">
                 Sudah memiliki akun member?
-                <a href="login.php" class="font-bold text-teal-600 hover:text-teal-700 hover:underline ml-1">
+                <a href="login.php" class="font-bold text-vym-600 hover:text-vym-700 hover:underline ml-1">
                     Masuk ke Portal
                 </a>
             </div>
