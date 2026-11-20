@@ -163,9 +163,18 @@ require_once __DIR__ . '/header.php';
                                 </td>
                                 <td class="px-5 py-4 whitespace-nowrap text-center">
                                     <?php if ($deal['status_deal'] === 'Deal'): ?>
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                            <i class="fa-solid fa-circle-check text-[10px]"></i> Deal (Komisi Cair)
-                                        </span>
+                                        <?php if (($deal['status_bayar'] ?? '') === 'Sudah Ditransfer'): ?>
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                <i class="fa-solid fa-check-double text-[10px]"></i> Sudah Ditransfer
+                                            </span>
+                                            <?php if (!empty($deal['tgl_transfer'])): ?>
+                                                <div class="text-[10px] text-slate-400 mt-0.5"><?= date('d/m/Y', strtotime($deal['tgl_transfer'])) ?></div>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
+                                                <i class="fa-solid fa-circle-check text-[10px]"></i> Deal (Antrean Transfer)
+                                            </span>
+                                        <?php endif; ?>
                                     <?php elseif ($deal['status_deal'] === 'Pending'): ?>
                                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
                                             <i class="fa-solid fa-clock text-[10px]"></i> Pending Follow-up
@@ -179,15 +188,19 @@ require_once __DIR__ . '/header.php';
                                 <td class="px-5 py-4 whitespace-nowrap text-center">
                                     <button type="button" 
                                         onclick="showDetailModal(<?= htmlspecialchars(json_encode([
-                                            'id' => '#DL-' . str_pad($deal['id_deal'], 4, '0', STR_PAD_LEFT),
-                                            'tanggal' => format_tanggal_id($deal['created_at']),
-                                            'produk' => $deal['nama_produk'],
-                                            'estimasi' => format_rupiah($deal['estimasi_nilai']),
-                                            'persen' => number_format((float)$deal['persen_komisi'], 1) . '%',
-                                            'komisi' => format_rupiah($deal['nominal_komisi']),
-                                            'status' => $deal['status_deal'],
-                                            'catatan' => $deal['catatan'] ?: 'Tidak ada catatan tambahan.'
-                                        ])) ?>)"
+                                             'id' => '#DL-' . str_pad($deal['id_deal'], 4, '0', STR_PAD_LEFT),
+                                             'tanggal' => format_tanggal_id($deal['created_at']),
+                                             'produk' => $deal['nama_produk'],
+                                             'estimasi' => format_rupiah($deal['estimasi_nilai']),
+                                             'persen' => number_format((float)$deal['persen_komisi'], 1) . '%',
+                                             'komisi' => format_rupiah($deal['nominal_komisi']),
+                                             'status' => $deal['status_deal'],
+                                             'status_bayar' => $deal['status_bayar'] ?: 'Belum Ditransfer',
+                                             'tgl_transfer' => !empty($deal['tgl_transfer']) ? format_tanggal_id($deal['tgl_transfer']) : '-',
+                                             'bukti_url' => !empty($deal['bukti_transfer']) ? (OFFICE_URL . 'uploads/bukti_komisi/' . $deal['bukti_transfer']) : '',
+                                             'catatan_transfer' => $deal['catatan_transfer'] ?: '',
+                                             'catatan' => $deal['catatan'] ?: 'Tidak ada catatan tambahan.'
+                                         ])) ?>)"
                                         class="text-xs font-bold text-vym-600 hover:text-vym-800 bg-vym-50 hover:bg-vym-100 px-3 py-1.5 rounded-lg transition">
                                         <i class="fa-solid fa-eye mr-1"></i> Detail
                                     </button>
@@ -249,6 +262,12 @@ require_once __DIR__ . '/header.php';
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Catatan Faskes / Spesifikasi</span>
                 <div id="modalCatatan" class="text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200 whitespace-pre-line leading-relaxed"></div>
             </div>
+
+            <!-- Bagian Info Pencairan Komisi (Khusus Deal) -->
+            <div id="modalPayoutSection" class="hidden rounded-xl p-4 border transition">
+                <span class="text-[11px] font-bold uppercase tracking-wider block mb-1.5" id="modalPayoutTitle">Informasi Pembayaran Komisi</span>
+                <div id="modalPayoutContent" class="text-xs space-y-1.5"></div>
+            </div>
         </div>
 
         <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end">
@@ -270,11 +289,38 @@ function showDetailModal(data) {
     document.getElementById('modalCatatan').textContent = data.catatan;
 
     const badgeContainer = document.getElementById('modalStatusBadge');
+    const payoutSection = document.getElementById('modalPayoutSection');
+    const payoutTitle = document.getElementById('modalPayoutTitle');
+    const payoutContent = document.getElementById('modalPayoutContent');
+
     if (data.status === 'Deal') {
         badgeContainer.innerHTML = '<span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full"><i class="fa-solid fa-circle-check text-[10px]"></i> Deal</span>';
+        
+        payoutSection.classList.remove('hidden');
+        if (data.status_bayar === 'Sudah Ditransfer') {
+            payoutSection.className = 'rounded-xl p-4 border bg-emerald-50 border-emerald-200 text-emerald-950';
+            payoutTitle.className = 'text-[11px] font-bold uppercase tracking-wider block mb-1.5 text-emerald-800';
+            payoutTitle.innerHTML = '<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> Komisi Berhasil Ditransfer';
+            
+            let html = '<div class="flex items-center justify-between py-1 border-b border-emerald-200/60 font-medium"><span>Tanggal Transfer:</span><strong>' + data.tgl_transfer + '</strong></div>';
+            if (data.catatan_transfer) {
+                html += '<div class="py-1 text-slate-700"><strong>Catatan Finance:</strong> ' + data.catatan_transfer + '</div>';
+            }
+            if (data.bukti_url) {
+                html += '<div class="pt-2"><a href="' + data.bukti_url + '" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-sm transition"><i class="fa-solid fa-receipt"></i> Unduh / Lihat Bukti Transfer</a></div>';
+            }
+            payoutContent.innerHTML = html;
+        } else {
+            payoutSection.className = 'rounded-xl p-4 border bg-amber-50 border-amber-200 text-amber-950';
+            payoutTitle.className = 'text-[11px] font-bold uppercase tracking-wider block mb-1.5 text-amber-800';
+            payoutTitle.innerHTML = '<i class="fa-solid fa-hourglass-half mr-1 text-amber-600"></i> Menunggu Jadwal Pencairan Finance';
+            payoutContent.innerHTML = '<p class="text-xs text-amber-900 leading-relaxed">Transaksi alkes ini telah berhasil Deal! Komisi Anda sebesar <strong>' + data.komisi + '</strong> sedang disiapkan oleh tim keuangan untuk ditransfer ke rekening bank Anda yang terdaftar.</p>';
+        }
     } else if (data.status === 'Pending') {
+        payoutSection.classList.add('hidden');
         badgeContainer.innerHTML = '<span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-0.5 rounded-full"><i class="fa-solid fa-clock text-[10px]"></i> Pending Follow-up</span>';
     } else {
+        payoutSection.classList.add('hidden');
         badgeContainer.innerHTML = '<span class="inline-flex items-center gap-1 text-xs font-bold text-slate-600 bg-slate-200 px-2.5 py-0.5 rounded-full"><i class="fa-solid fa-circle-xmark text-[10px]"></i> Batal</span>';
     }
 

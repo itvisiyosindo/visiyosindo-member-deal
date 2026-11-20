@@ -21,6 +21,7 @@ define('DB_PORT', 3306);
 define('APP_NAME', 'Portal Member Visi Academy');
 define('COMPANY_NAME', 'PT Visi Yosindo Medikal');
 define('BASE_URL', './');
+define('OFFICE_URL', 'https://office.visiyosindo.id/');
 
 /**
  * Singleton Database Connection (PDO)

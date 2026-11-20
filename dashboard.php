@@ -13,6 +13,8 @@ $stats_stmt = $db->prepare("
         SUM(CASE WHEN status_deal = 'Pending' THEN 1 ELSE 0 END) as total_pending,
         SUM(CASE WHEN status_deal = 'Batal' THEN 1 ELSE 0 END) as total_batal,
         COALESCE(SUM(CASE WHEN status_deal = 'Deal' THEN nominal_komisi ELSE 0 END), 0) as komisi_deal,
+        COALESCE(SUM(CASE WHEN status_deal = 'Deal' AND status_bayar = 'Sudah Ditransfer' THEN nominal_komisi ELSE 0 END), 0) as komisi_tertransfer,
+        COALESCE(SUM(CASE WHEN status_deal = 'Deal' AND (status_bayar = 'Belum Ditransfer' OR status_bayar IS NULL) THEN nominal_komisi ELSE 0 END), 0) as komisi_menunggu_transfer,
         COALESCE(SUM(CASE WHEN status_deal = 'Pending' THEN nominal_komisi ELSE 0 END), 0) as komisi_pending,
         COALESCE(SUM(estimasi_nilai), 0) as total_estimasi_nilai
     FROM va_member_deal 
@@ -101,7 +103,7 @@ require_once __DIR__ . '/header.php';
         <!-- Card 1: Komisi Deal -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
             <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Komisi Deal (Cair)</span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Komisi Deal</span>
                 <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
                     <i class="fa-solid fa-hand-holding-dollar"></i>
                 </div>
@@ -109,9 +111,15 @@ require_once __DIR__ . '/header.php';
             <div class="text-2xl font-black text-slate-900 mb-1">
                 <?= format_rupiah($stats['komisi_deal']) ?>
             </div>
-            <div class="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold">
-                <i class="fa-solid fa-check-double"></i>
-                <span><?= (int)$stats['total_deal'] ?> Prospek Sukses Deal</span>
+            <div class="flex flex-col gap-0.5 text-[11px] text-slate-600 mt-2 pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between text-emerald-700 font-semibold">
+                    <span><i class="fa-solid fa-check-double mr-1"></i> Ditransfer:</span>
+                    <span><?= format_rupiah($stats['komisi_tertransfer']) ?></span>
+                </div>
+                <div class="flex items-center justify-between text-amber-700 font-semibold">
+                    <span><i class="fa-solid fa-hourglass-half mr-1"></i> Antrean Transfer:</span>
+                    <span><?= format_rupiah($stats['komisi_menunggu_transfer']) ?></span>
+                </div>
             </div>
         </div>
 
@@ -245,9 +253,15 @@ require_once __DIR__ . '/header.php';
                                 </td>
                                 <td class="px-5 py-4 whitespace-nowrap text-center">
                                     <?php if ($deal['status_deal'] === 'Deal'): ?>
-                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
-                                            <i class="fa-solid fa-circle-check text-[10px]"></i> Deal
-                                        </span>
+                                        <?php if (($deal['status_bayar'] ?? '') === 'Sudah Ditransfer'): ?>
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
+                                                <i class="fa-solid fa-check-double text-[10px]"></i> Sudah Ditransfer
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                <i class="fa-solid fa-circle-check text-[10px]"></i> Deal (Proses Transfer)
+                                            </span>
+                                        <?php endif; ?>
                                     <?php elseif ($deal['status_deal'] === 'Pending'): ?>
                                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
                                             <i class="fa-solid fa-clock text-[10px]"></i> Pending
