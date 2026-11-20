@@ -60,7 +60,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $catatan_final
             ]);
 
-            set_flash('success', "Prospek kebutuhan alkes \"{$form['nama_produk']}\" berhasil diajukan! Tim kami akan segera menindaklanjuti.");
+            // Kirim notifikasi WA otomatis ke Grup Marketing PT Visi Yosindo Medikal
+            $deal_data = [
+                'nama_produk'     => $form['nama_produk'],
+                'estimasi_nilai'  => $form['estimasi_nilai'],
+                'persen_komisi'   => $form['persen_komisi'],
+                'nominal_komisi'  => $nominal_komisi,
+                'instansi_tujuan' => $form['instansi_tujuan'],
+                'contact_person'  => $form['contact_person'],
+                'spesifikasi'     => $form['spesifikasi']
+            ];
+            @notify_marketing_new_deal($deal_data, $member);
+
+            set_flash('success', "Prospek kebutuhan alkes \"{$form['nama_produk']}\" berhasil diajukan! Notifikasi telah dikirimkan ke Tim Marketing kami untuk segera ditindaklanjuti.");
             header('Location: tracking-deal.php');
             exit;
         } catch (PDOException $e) {

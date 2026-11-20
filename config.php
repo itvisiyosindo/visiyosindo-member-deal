@@ -164,3 +164,98 @@ function generate_kode_member($db) {
     // Fallback dengan random suffix
     return 'VA-' . strtoupper(substr(uniqid(), -4));
 }
+
+/**
+ * Kirim Notifikasi WhatsApp ke Grup Marketing PT Visi Yosindo Medikal
+ */
+function send_wa_group_marketing($message) {
+    $devId       = 'bbe8ce03e61d0c490e850bce5f3df56c';
+    $groupName   = 'MARKETING PT. VYM';
+    $groupJid    = '6281261457547-1569293240@g.us';
+    $fonnteToken = 'fBHmpx7vjoVqVzMwawSa';
+
+    // 1. Utamakan kirim via Whacenter Group Gateway
+    $ch = curl_init('https://app.whacenter.com/api/sendGroup');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => http_build_query([
+            'device_id' => $devId,
+            'group'     => $groupName,
+            'message'   => $message
+        ]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_TIMEOUT        => 4,
+        CURLOPT_CONNECTTIMEOUT => 3,
+    ]);
+    $res = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($httpCode >= 200 && $httpCode < 300 && $res) {
+        $json = json_decode($res, true);
+        if (!empty($json['status'])) {
+            return true;
+        }
+    }
+
+    // 2. Fallback via Fonnte Group Gateway jika Whacenter berhalangan
+    $ch = curl_init('https://api.fonnte.com/send');
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => [
+            'target'  => $groupJid,
+            'message' => $message,
+        ],
+        CURLOPT_HTTPHEADER     => [
+            "Authorization: {$fonnteToken}"
+        ],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_TIMEOUT        => 4,
+        CURLOPT_CONNECTTIMEOUT => 3,
+    ]);
+    $res2 = curl_exec($ch);
+    $httpCode2 = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    return ($httpCode2 >= 200 && $httpCode2 < 300);
+}
+
+/**
+ * Notifikasi Pengajuan Kebutuhan Alkes Baru ke Grup Marketing
+ */
+function notify_marketing_new_deal($deal_data, $member_data) {
+    $nama_member = $member_data['nama_lengkap'] ?? 'Member Visi Academy';
+    $kode_member = $member_data['kode_member'] ?? '-';
+    $institusi   = !empty($member_data['institusi']) ? $member_data['institusi'] : '-';
+    $no_telp     = !empty($member_data['no_telp']) ? $member_data['no_telp'] : '-';
+
+    $nama_produk     = $deal_data['nama_produk'] ?? '-';
+    $estimasi_nilai  = format_rupiah($deal_data['estimasi_nilai'] ?? 0);
+    $persen_komisi   = number_format((float)($deal_data['persen_komisi'] ?? 3), 2);
+    $nominal_komisi  = format_rupiah($deal_data['nominal_komisi'] ?? 0);
+    $instansi_tujuan = !empty($deal_data['instansi_tujuan']) ? $deal_data['instansi_tujuan'] : '-';
+    $contact_person  = !empty($deal_data['contact_person']) ? $deal_data['contact_person'] : '-';
+    $spesifikasi     = !empty($deal_data['spesifikasi']) ? $deal_data['spesifikasi'] : '-';
+
+    $pesan = "🔔 *PENGAJUAN KEBUTUHAN ALKES BARU* 🔔\n" .
+             "_Portal Member Visi Academy_\n\n" .
+             "Halo Tim Marketing PT Visi Yosindo Medikal,\n" .
+             "Telah masuk pengajuan kebutuhan alat kesehatan baru dari member referral:\n\n" .
+             "👤 *Member Pengaju*: {$nama_member} ({$kode_member})\n" .
+             "🏢 *Institusi Asal*: {$institusi}\n" .
+             "📞 *No. WhatsApp*: {$no_telp}\n\n" .
+             "📋 *Detail Kebutuhan Alkes*:\n" .
+             "• *Nama Alat / Produk*: {$nama_produk}\n" .
+             "• *Estimasi Nilai*: {$estimasi_nilai}\n" .
+             "• *Estimasi Komisi ({$persen_komisi}%)*: {$nominal_komisi}\n" .
+             "• *Faskes Tujuan*: {$instansi_tujuan}\n" .
+             "• *PIC / Kontak di Faskes*: {$contact_person}\n" .
+             "• *Spesifikasi / Catatan*: {$spesifikasi}\n\n" .
+             "Silakan tim marketing memvalidasi dan menindaklanjuti prospek ini di ERP Kantor:\n" .
+             "👉 https://office.visiyosindo.id/member_visiacademy\n\n" .
+             "_Sistem Office PT Visi Yosindo Medikal_";
+
+    return send_wa_group_marketing($pesan);
+}
