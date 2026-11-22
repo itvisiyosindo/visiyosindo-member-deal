@@ -270,24 +270,6 @@ require_once __DIR__ . '/header.php';
                     </div>
                 </form>
             </div>
-
-            <!-- Kartu Member Card -->
-            <div class="bg-gradient-to-br from-navy-950 via-vym-900 to-vym-800 p-5 rounded-2xl border border-vym-800/80 text-white shadow-md relative overflow-hidden">
-                <div class="flex items-center justify-between mb-3">
-                    <div class="text-[11px] font-bold text-vym-300 uppercase tracking-widest">Visi Academy Member Card</div>
-                    <div class="w-8 h-8 rounded-lg bg-white p-1 flex items-center justify-center">
-                        <img src="assets/logo.png" alt="Logo" class="w-full h-full object-contain">
-                    </div>
-                </div>
-                <div class="text-base font-black tracking-wide"><?= htmlspecialchars($member['nama_member']) ?></div>
-                <div class="text-xs font-mono text-vym-200 mt-1"><?= htmlspecialchars($member['kode_member']) ?></div>
-                <div class="mt-4 pt-3 border-t border-vym-700/50 flex items-center justify-between text-[11px] text-vym-200">
-                    <span>PT Visi Yosindo Medikal</span>
-                    <span class="text-emerald-400 font-bold flex items-center gap-1">
-                        <i class="fa-solid fa-circle-check"></i> Terverifikasi
-                    </span>
-                </div>
-            </div>
         </div>
     </div>
 </div>

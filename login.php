@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$page_title = 'Masuk Member';
+$page_title = 'Login';
 require_once __DIR__ . '/header.php';
 ?>
 
@@ -122,15 +122,15 @@ require_once __DIR__ . '/header.php';
 
                 <div class="pt-2">
                     <button type="submit" class="w-full bg-vym-600 hover:bg-vym-700 text-white font-bold py-3 rounded-xl shadow-md shadow-vym-600/20 transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-right-to-bracket"></i> Masuk Sekarang
+                        <i class="fa-solid fa-right-to-bracket"></i> Login
                     </button>
                 </div>
             </form>
 
             <div class="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-500">
-                Belum terdaftar sebagai member?
+                Belum punya akun?
                 <a href="register.php" class="font-bold text-vym-600 hover:text-vym-700 hover:underline ml-1">
-                    Daftar Akun Baru
+                    Daftar
                 </a>
             </div>
         </div>

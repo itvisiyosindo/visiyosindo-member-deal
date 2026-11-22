@@ -117,10 +117,10 @@ $flash = get_flash();
                 <?php else: ?>
                     <div class="flex items-center gap-2">
                         <a href="login.php" class="text-slate-200 hover:text-white text-sm font-medium px-3.5 py-2 rounded-lg hover:bg-slate-800 transition">
-                            Masuk
+                            Login
                         </a>
                         <a href="register.php" class="bg-vym-600 hover:bg-vym-700 text-white text-sm font-semibold px-4 py-2 rounded-lg shadow-md shadow-vym-600/30 transition">
-                            Daftar Member
+                            Daftar
                         </a>
                     </div>
                 <?php endif; ?>

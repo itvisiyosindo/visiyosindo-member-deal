@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$page_title = 'Pendaftaran Member Baru';
+$page_title = 'Daftar Akun';
 require_once __DIR__ . '/header.php';
 ?>
 
@@ -113,7 +113,7 @@ require_once __DIR__ . '/header.php';
             <span class="inline-block bg-vym-500/20 text-vym-200 text-xs font-semibold px-3 py-1 rounded-full border border-vym-400/30 mb-2">
                 Program Referral PT Visi Yosindo Medikal
             </span>
-            <h2 class="text-2xl font-bold">Registrasi Member Visi Academy</h2>
+            <h2 class="text-2xl font-bold">Daftar Akun Visi Academy</h2>
             <p class="text-xs text-vym-200 mt-1 max-w-md mx-auto">
                 Khusus Dokter, Radiografer, dan Alumni Pelatihan untuk kemitraan pengadaan alat kesehatan.
             </p>
@@ -251,15 +251,15 @@ require_once __DIR__ . '/header.php';
 
                 <div class="pt-2">
                     <button type="submit" class="w-full bg-vym-600 hover:bg-vym-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-vym-600/25 transition flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-circle-check"></i> Daftar & Aktifkan Member
+                        <i class="fa-solid fa-circle-check"></i> Daftar Sekarang
                     </button>
                 </div>
             </form>
 
             <div class="mt-6 pt-6 border-t border-slate-100 text-center text-xs text-slate-500">
-                Sudah memiliki akun member?
+                Sudah punya akun?
                 <a href="login.php" class="font-bold text-vym-600 hover:text-vym-700 hover:underline ml-1">
-                    Masuk ke Portal
+                    Login
                 </a>
             </div>
         </div>

@@ -35,10 +35,10 @@ require_once __DIR__ . '/header.php';
             </p>
             <div class="flex flex-wrap items-center gap-4">
                 <a href="register.php" class="bg-vym-600 hover:bg-vym-500 text-white font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-vym-600/40 transition flex items-center gap-2">
-                    <i class="fa-solid fa-user-plus"></i> Gabung Jadi Member
+                    <i class="fa-solid fa-user-plus"></i> Daftar Sekarang
                 </a>
                 <a href="login.php" class="bg-slate-900/80 hover:bg-slate-800 text-slate-200 font-semibold px-6 py-3.5 rounded-xl border border-slate-700 transition flex items-center gap-2">
-                    <i class="fa-solid fa-right-to-bracket"></i> Masuk ke Portal
+                    <i class="fa-solid fa-right-to-bracket"></i> Login
                 </a>
             </div>
         </div>
@@ -50,7 +50,7 @@ require_once __DIR__ . '/header.php';
             <div class="w-12 h-12 rounded-xl bg-vym-50 text-vym-600 flex items-center justify-center font-bold text-xl mb-4 group-hover:scale-105 transition-transform">
                 1
             </div>
-            <h3 class="font-bold text-slate-900 text-lg mb-2">Daftar Akun Member</h3>
+            <h3 class="font-bold text-slate-900 text-lg mb-2">Daftar Akun</h3>
             <p class="text-slate-600 text-sm leading-relaxed">
                 Registrasi mandiri secara cepat menggunakan No. WhatsApp & data profesi/instansi faskes Anda.
             </p>
