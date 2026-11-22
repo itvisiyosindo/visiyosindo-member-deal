@@ -149,19 +149,24 @@ require_once __DIR__ . '/header.php';
                 $brosur_url = resolve_office_asset_url($prod['url_brosur'] ?? '');
 
                 $wa_lines = [
-                    "Halo Dokter / Bapak / Ibu,",
-                    "Perkenalkan saya *{$member['nama_member']}* (Mitra Visi Academy - PT Visi Yosindo Medikal).",
+                    "Halo Bapak / Ibu,",
                     "",
-                    "Apakah di faskes/klinik sedang ada rencana pengadaan *{$prod['nama_produk']}*?",
+                    "Izin berbagi informasi alat kesehatan dari *PT Visi Yosindo Medikal* yang mungkin sedang dibutuhkan di RS / Klinik:",
+                    "",
+                    "📌 *{$prod['nama_produk']}*",
                 ];
                 if (!empty($prod['deskripsi_singkat'])) {
-                    $wa_lines[] = "Info singkat: {$prod['deskripsi_singkat']}";
+                    $wa_lines[] = trim($prod['deskripsi_singkat']);
                 }
                 if ($brosur_url !== '') {
-                    $wa_lines[] = "Brosur produk: {$brosur_url}";
+                    $wa_lines[] = "";
+                    $wa_lines[] = "📄 *Brosur Produk:*";
+                    $wa_lines[] = $brosur_url;
                 }
                 $wa_lines[] = "";
-                $wa_lines[] = "Jika berkenan, tim *PT Visi Yosindo Medikal* siap bantu konsultasi spesifikasi & penawaran resminya.";
+                $wa_lines[] = "Jika sedang ada rencana pengadaan atau ingin diskusi spesifikasi & penawaran resmi, silakan kabari ya. Nanti bisa langsung saya bantu sambungkan dengan tim *PT Visi Yosindo Medikal*.";
+                $wa_lines[] = "";
+                $wa_lines[] = "Terima kasih 🙏";
                 $wa_url = "https://wa.me/?text=" . rawurlencode(implode("\n", $wa_lines));
 
                 $ajukan_url = "ajukan-deal.php?produk=" . urlencode($prod['nama_produk']) . "&harga=" . urlencode((string)(int)round($harga));
