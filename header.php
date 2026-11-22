@@ -77,6 +77,9 @@ $flash = get_flash();
                         <a href="dashboard.php" class="px-3.5 py-2 rounded-lg text-sm font-medium transition <?= $current_page === 'dashboard.php' ? 'bg-vym-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/80' ?>">
                             <i class="fa-solid fa-chart-pie mr-1.5 text-xs"></i> Dashboard
                         </a>
+                        <a href="katalog.php" class="px-3.5 py-2 rounded-lg text-sm font-medium transition <?= $current_page === 'katalog.php' ? 'bg-vym-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/80' ?>">
+                            <i class="fa-solid fa-kit-medical mr-1.5 text-xs"></i> Katalog Alkes
+                        </a>
                         <a href="ajukan-deal.php" class="px-3.5 py-2 rounded-lg text-sm font-medium transition <?= $current_page === 'ajukan-deal.php' ? 'bg-vym-600 text-white shadow-sm' : 'text-slate-300 hover:text-white hover:bg-slate-800/80' ?>">
                             <i class="fa-solid fa-circle-plus mr-1.5 text-xs text-vym-400"></i> Ajukan Alkes Baru
                         </a>
@@ -133,6 +136,9 @@ $flash = get_flash();
                 </div>
                 <a href="dashboard.php" class="block px-3 py-2 rounded-md text-sm font-medium <?= $current_page === 'dashboard.php' ? 'bg-vym-600 text-white' : 'text-slate-300 hover:bg-slate-800' ?>">
                     <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard
+                </a>
+                <a href="katalog.php" class="block px-3 py-2 rounded-md text-sm font-medium <?= $current_page === 'katalog.php' ? 'bg-vym-600 text-white' : 'text-slate-300 hover:bg-slate-800' ?>">
+                    <i class="fa-solid fa-kit-medical mr-2"></i> Katalog Alkes
                 </a>
                 <a href="ajukan-deal.php" class="block px-3 py-2 rounded-md text-sm font-medium <?= $current_page === 'ajukan-deal.php' ? 'bg-vym-600 text-white' : 'text-slate-300 hover:bg-slate-800' ?>">
                     <i class="fa-solid fa-circle-plus mr-2 text-vym-400"></i> Ajukan Alkes Baru

@@ -3,32 +3,53 @@ require_once __DIR__ . '/config.php';
 require_login();
 
 $member = current_member();
+$db = get_db();
+ensure_katalog_table($db);
 $error = '';
+$locked_komisi = (float)DEFAULT_KOMISI_PERSEN;
+
+$prefill_produk = trim($_GET['produk'] ?? '');
+$raw_prefill_harga = str_replace(['Rp', '.', ' ', ','], '', $_GET['harga'] ?? '');
+$prefill_harga = (is_numeric($raw_prefill_harga) && (float)$raw_prefill_harga > 0) ? (float)$raw_prefill_harga : '';
+
 $form = [
-    'nama_produk' => '',
+    'nama_produk' => $prefill_produk,
     'instansi_tujuan' => '',
-    'estimasi_nilai' => '',
-    'persen_komisi' => '3.00',
+    'estimasi_nilai' => $prefill_harga !== '' ? number_format($prefill_harga, 0, ',', '.') : '',
+    'persen_komisi' => number_format($locked_komisi, 2, '.', ''),
     'contact_person' => '',
     'spesifikasi' => ''
 ];
 
+// Ambil daftar produk aktif untuk autocomplete datalist
+$katalog_suggestions = [];
+try {
+    $kat_stmt = $db->query("SELECT nama_produk FROM va_katalog_produk WHERE status = 'aktif' ORDER BY urutan ASC, id_produk ASC");
+    $katalog_suggestions = $kat_stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (Throwable $e) {
+    $katalog_suggestions = [];
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form['nama_produk'] = trim($_POST['nama_produk'] ?? '');
     $form['instansi_tujuan'] = trim($_POST['instansi_tujuan'] ?? '');
-    $raw_estimasi = str_replace(['Rp', '.', ' ', ','], '', $_POST['estimasi_nilai'] ?? '0');
-    $form['estimasi_nilai'] = (float)$raw_estimasi;
-    $form['persen_komisi'] = (float)($_POST['persen_komisi'] ?? 3.00);
+    $raw_estimasi = preg_replace('/\D/', '', $_POST['estimasi_nilai'] ?? '0');
+    $estimasi_num = (float)$raw_estimasi;
+    $form['estimasi_nilai'] = $estimasi_num > 0 ? number_format($estimasi_num, 0, ',', '.') : '';
+    // Kunci persentase komisi di server sesuai standar (2%)
+    $form['persen_komisi'] = $locked_komisi;
     $form['contact_person'] = trim($_POST['contact_person'] ?? '');
     $form['spesifikasi'] = trim($_POST['spesifikasi'] ?? '');
 
-    if (empty($form['nama_produk'])) {
+    if (!verify_csrf()) {
+        $error = 'Sesi formulir tidak valid atau kedaluwarsa. Silakan muat ulang halaman dan coba lagi.';
+    } elseif (empty($form['nama_produk'])) {
         $error = 'Nama alat kesehatan / produk wajib diisi.';
-    } elseif ($form['estimasi_nilai'] <= 0) {
+    } elseif ($estimasi_num <= 0) {
         $error = 'Estimasi nilai pengadaan harus lebih dari 0.';
     } else {
         // Hitung nominal komisi
-        $nominal_komisi = ($form['estimasi_nilai'] * $form['persen_komisi']) / 100;
+        $nominal_komisi = ($estimasi_num * $locked_komisi) / 100;
 
         // Gabungkan catatan agar lengkap dan mudah dibaca oleh ERP kantor
         $catatan_parts = [];
@@ -43,7 +64,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $catatan_final = implode("\n", $catatan_parts);
 
-        $db = get_db();
         $stmt = $db->prepare("
             INSERT INTO va_member_deal 
             (id_member, nama_produk, estimasi_nilai, persen_komisi, nominal_komisi, status_deal, catatan, created_at)
@@ -54,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([
                 $member['id_member'],
                 $form['nama_produk'],
-                $form['estimasi_nilai'],
-                $form['persen_komisi'],
+                $estimasi_num,
+                $locked_komisi,
                 $nominal_komisi,
                 $catatan_final
             ]);
@@ -63,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Kirim notifikasi WA otomatis ke Grup Marketing PT Visi Yosindo Medikal
             $deal_data = [
                 'nama_produk'     => $form['nama_produk'],
-                'estimasi_nilai'  => $form['estimasi_nilai'],
-                'persen_komisi'   => $form['persen_komisi'],
+                'estimasi_nilai'  => $estimasi_num,
+                'persen_komisi'   => $locked_komisi,
                 'nominal_komisi'  => $nominal_komisi,
                 'instansi_tujuan' => $form['instansi_tujuan'],
                 'contact_person'  => $form['contact_person'],
@@ -109,6 +129,7 @@ require_once __DIR__ . '/header.php';
             <?php endif; ?>
 
             <form action="ajukan-deal.php" method="POST" id="dealForm" class="space-y-6">
+                <?= csrf_field() ?>
                 <!-- Info Produk -->
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">
@@ -123,19 +144,25 @@ require_once __DIR__ . '/header.php';
                                 placeholder="Ketik atau pilih rekomendasi (misal: USG Doppler 4D, X-Ray Stationary 500mA, C-Arm)"
                                 class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             <datalist id="alkesSuggestions">
-                                <option value="USG Color Doppler 4D">
-                                <option value="USG Portable B/W & Color">
-                                <option value="X-Ray Stationary 500mA High Frequency">
-                                <option value="Mobile X-Ray Unit 100mA / 300mA">
-                                <option value="C-Arm Digital Radiography">
-                                <option value="Dental X-Ray & Panoramic OPG">
-                                <option value="Mammography System">
-                                <option value="Lead Apron & Proteksi Radiasi (Kaca Timbal / Thyroid)">
-                                <option value="Patient Monitor Multi-Parameter">
-                                <option value="Defibrillator AED / Manual">
-                                <option value="Electrocardiograph (EKG / ECG 12 Channel)">
-                                <option value="Autoclave & Mesin Sterilisasi RS">
-                                <option value="Lampu Operasi & Meja Operasi Elektrik">
+                                <?php if (!empty($katalog_suggestions)): ?>
+                                    <?php foreach ($katalog_suggestions as $nama_item): ?>
+                                        <option value="<?= htmlspecialchars($nama_item) ?>">
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <option value="USG Color Doppler 4D">
+                                    <option value="USG Portable B/W & Color">
+                                    <option value="X-Ray Stationary 500mA High Frequency">
+                                    <option value="Mobile X-Ray Unit 100mA / 300mA">
+                                    <option value="C-Arm Digital Radiography">
+                                    <option value="Dental X-Ray & Panoramic OPG">
+                                    <option value="Mammography System">
+                                    <option value="Lead Apron & Proteksi Radiasi (Kaca Timbal / Thyroid)">
+                                    <option value="Patient Monitor Multi-Parameter">
+                                    <option value="Defibrillator AED / Manual">
+                                    <option value="Electrocardiograph (EKG / ECG 12 Channel)">
+                                    <option value="Autoclave & Mesin Sterilisasi RS">
+                                    <option value="Lampu Operasi & Meja Operasi Elektrik">
+                                <?php endif; ?>
                             </datalist>
                         </div>
 
@@ -164,7 +191,7 @@ require_once __DIR__ . '/header.php';
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400 font-bold text-xs">
                                     Rp
                                 </span>
-                                <input type="text" id="estimasiNilaiInput" name="estimasi_nilai" required
+                                <input type="text" id="estimasiNilaiInput" name="estimasi_nilai" value="<?= htmlspecialchars($form['estimasi_nilai']) ?>" required
                                     placeholder="Contoh: 150.000.000"
                                     class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
@@ -172,18 +199,23 @@ require_once __DIR__ . '/header.php';
                         </div>
 
                         <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                                Persentase Komisi (%)
-                            </label>
+                            <div class="flex items-center justify-between mb-1.5">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                                    Persentase Komisi (%)
+                                </label>
+                                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-vym-700 bg-vym-50 border border-vym-200 px-2 py-0.5 rounded-full">
+                                    <i class="fa-solid fa-lock text-[9px]"></i> Terkunci Standar
+                                </span>
+                            </div>
                             <div class="relative">
-                                <input type="number" step="0.1" min="1" max="10" id="persenKomisiInput" name="persen_komisi" 
-                                    value="<?= htmlspecialchars($form['persen_komisi']) ?>"
-                                    class="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
-                                <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-400 font-bold text-xs">
+                                <input type="number" step="0.1" id="persenKomisiInput" name="persen_komisi" 
+                                    value="<?= number_format($locked_komisi, 1, '.', '') ?>" readonly
+                                    class="w-full pl-4 pr-10 py-2.5 bg-slate-100 border border-slate-300 rounded-xl text-sm font-bold text-slate-700 cursor-not-allowed focus:outline-none">
+                                <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 pointer-events-none text-slate-500 font-bold text-xs">
                                     %
                                 </span>
                             </div>
-                            <span class="text-[11px] text-slate-500 mt-1 block">Standar referral: 2.5% - 5.0% dari nilai deal bersih.</span>
+                            <span class="text-[11px] text-slate-500 mt-1 block">Estimasi awal tetap <strong><?= number_format($locked_komisi, 0) ?>%</strong>; nilai &amp; komisi final diverifikasi Sales/Finance saat transaksi <strong>Deal</strong>.</span>
                         </div>
                     </div>
 
@@ -267,7 +299,7 @@ function updateCalculation() {
 }
 
 nilaiInput.addEventListener('input', updateCalculation);
-persenInput.addEventListener('input', updateCalculation);
+updateCalculation();
 </script>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

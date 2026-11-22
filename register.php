@@ -29,8 +29,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
 
-    // Validasi Dasar
-    if (empty($form['nama_member']) || empty($form['no_telp']) || empty($form['email']) || empty($password)) {
+    // Validasi Dasar & CSRF
+    if (!verify_csrf()) {
+        $error = 'Sesi formulir tidak valid atau kedaluwarsa. Silakan muat ulang halaman dan coba lagi.';
+    } elseif (empty($form['nama_member']) || empty($form['no_telp']) || empty($form['email']) || empty($password)) {
         $error = 'Nama Lengkap, No. WhatsApp, Email, dan Password wajib diisi.';
     } elseif (!filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
         $error = 'Format email tidak valid.';
@@ -78,6 +80,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['member_name'] = $form['nama_member'];
                 $_SESSION['member_code'] = $kode_member;
 
+                // Kirim notifikasi WA otomatis ke Grup Marketing PT Visi Yosindo Medikal
+                @notify_marketing_new_member([
+                    'kode_member'    => $kode_member,
+                    'nama_member'    => $form['nama_member'],
+                    'no_telp'        => $form['no_telp'],
+                    'email'          => $form['email'],
+                    'institusi_asal' => $form['institusi_asal']
+                ]);
+
                 set_flash('success', "Pendaftaran berhasil! Selamat bergabung di Portal Member Visi Academy. Kode Member Anda: $kode_member");
                 header('Location: dashboard.php');
                 exit;
@@ -117,6 +128,7 @@ require_once __DIR__ . '/header.php';
             <?php endif; ?>
 
             <form action="register.php" method="POST" class="space-y-6">
+                <?= csrf_field() ?>
                 <!-- Data Pribadi & Kontak -->
                 <div>
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 pb-2 border-b border-slate-200 mb-4">

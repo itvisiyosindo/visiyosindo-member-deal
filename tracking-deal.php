@@ -195,10 +195,10 @@ require_once __DIR__ . '/header.php';
                                              'persen' => number_format((float)$deal['persen_komisi'], 1) . '%',
                                              'komisi' => format_rupiah($deal['nominal_komisi']),
                                              'status' => $deal['status_deal'],
-                                             'status_bayar' => $deal['status_bayar'] ?: 'Belum Ditransfer',
+                                             'status_bayar' => $deal['status_bayar'] ?? 'Belum Ditransfer',
                                              'tgl_transfer' => !empty($deal['tgl_transfer']) ? format_tanggal_id($deal['tgl_transfer']) : '-',
                                              'bukti_url' => !empty($deal['bukti_transfer']) ? (OFFICE_URL . 'uploads/bukti_komisi/' . $deal['bukti_transfer']) : '',
-                                             'catatan_transfer' => $deal['catatan_transfer'] ?: '',
+                                             'catatan_transfer' => $deal['catatan_transfer'] ?? '',
                                              'catatan' => $deal['catatan'] ?: 'Tidak ada catatan tambahan.'
                                          ])) ?>)"
                                         class="text-xs font-bold text-vym-600 hover:text-vym-800 bg-vym-50 hover:bg-vym-100 px-3 py-1.5 rounded-lg transition">
@@ -279,6 +279,20 @@ require_once __DIR__ . '/header.php';
 </div>
 
 <script>
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function isSafeHttpUrl(url) {
+    return typeof url === 'string' && /^https?:\/\//i.test(url.trim());
+}
+
 function showDetailModal(data) {
     document.getElementById('modalId').textContent = data.id;
     document.getElementById('modalProduk').textContent = data.produk;
@@ -302,19 +316,19 @@ function showDetailModal(data) {
             payoutTitle.className = 'text-[11px] font-bold uppercase tracking-wider block mb-1.5 text-emerald-800';
             payoutTitle.innerHTML = '<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> Komisi Berhasil Ditransfer';
             
-            let html = '<div class="flex items-center justify-between py-1 border-b border-emerald-200/60 font-medium"><span>Tanggal Transfer:</span><strong>' + data.tgl_transfer + '</strong></div>';
+            let html = '<div class="flex items-center justify-between py-1 border-b border-emerald-200/60 font-medium"><span>Tanggal Transfer:</span><strong>' + escapeHtml(data.tgl_transfer) + '</strong></div>';
             if (data.catatan_transfer) {
-                html += '<div class="py-1 text-slate-700"><strong>Catatan Finance:</strong> ' + data.catatan_transfer + '</div>';
+                html += '<div class="py-1 text-slate-700"><strong>Catatan Finance:</strong> ' + escapeHtml(data.catatan_transfer) + '</div>';
             }
-            if (data.bukti_url) {
-                html += '<div class="pt-2"><a href="' + data.bukti_url + '" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-sm transition"><i class="fa-solid fa-receipt"></i> Unduh / Lihat Bukti Transfer</a></div>';
+            if (isSafeHttpUrl(data.bukti_url)) {
+                html += '<div class="pt-2"><a href="' + escapeHtml(data.bukti_url) + '" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg shadow-sm transition"><i class="fa-solid fa-receipt"></i> Unduh / Lihat Bukti Transfer</a></div>';
             }
             payoutContent.innerHTML = html;
         } else {
             payoutSection.className = 'rounded-xl p-4 border bg-amber-50 border-amber-200 text-amber-950';
             payoutTitle.className = 'text-[11px] font-bold uppercase tracking-wider block mb-1.5 text-amber-800';
             payoutTitle.innerHTML = '<i class="fa-solid fa-hourglass-half mr-1 text-amber-600"></i> Menunggu Jadwal Pencairan Finance';
-            payoutContent.innerHTML = '<p class="text-xs text-amber-900 leading-relaxed">Transaksi alkes ini telah berhasil Deal! Komisi Anda sebesar <strong>' + data.komisi + '</strong> sedang disiapkan oleh tim keuangan untuk ditransfer ke rekening bank Anda yang terdaftar.</p>';
+            payoutContent.innerHTML = '<p class="text-xs text-amber-900 leading-relaxed">Transaksi alkes ini telah berhasil Deal! Komisi Anda sebesar <strong>' + escapeHtml(data.komisi) + '</strong> sedang disiapkan oleh tim keuangan untuk ditransfer ke rekening bank Anda yang terdaftar.</p>';
         }
     } else if (data.status === 'Pending') {
         payoutSection.classList.add('hidden');

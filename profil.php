@@ -7,70 +7,74 @@ $db = get_db();
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $action = $_POST['action'] ?? 'update_profile';
+    if (!verify_csrf()) {
+        $error = 'Sesi formulir tidak valid atau kedaluwarsa. Silakan muat ulang halaman dan coba lagi.';
+    } else {
+        $action = $_POST['action'] ?? 'update_profile';
 
-    if ($action === 'update_profile') {
-        $nama_member = trim($_POST['nama_member'] ?? '');
-        $no_telp = trim($_POST['no_telp'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $institusi_asal = trim($_POST['institusi_asal'] ?? '');
-        $nama_bank = trim($_POST['nama_bank'] ?? '');
-        $no_rekening = trim($_POST['no_rekening'] ?? '');
-        $atas_nama_rekening = trim($_POST['atas_nama_rekening'] ?? '');
+        if ($action === 'update_profile') {
+            $nama_member = trim($_POST['nama_member'] ?? '');
+            $no_telp = trim($_POST['no_telp'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $institusi_asal = trim($_POST['institusi_asal'] ?? '');
+            $nama_bank = trim($_POST['nama_bank'] ?? '');
+            $no_rekening = trim($_POST['no_rekening'] ?? '');
+            $atas_nama_rekening = trim($_POST['atas_nama_rekening'] ?? '');
 
-        if (empty($nama_member) || empty($no_telp) || empty($email)) {
-            $error = 'Nama Lengkap, No. WhatsApp, dan Email tidak boleh kosong.';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $error = 'Format email tidak valid.';
-        } else {
-            // Cek duplikasi no_telp atau email milik member lain
-            $chk = $db->prepare("SELECT id_member FROM va_member WHERE (no_telp = ? OR email = ?) AND id_member != ? LIMIT 1");
-            $chk->execute([$no_telp, $email, $member['id_member']]);
-            if ($chk->fetch()) {
-                $error = 'Nomor WhatsApp atau Email sudah digunakan oleh member lain.';
+            if (empty($nama_member) || empty($no_telp) || empty($email)) {
+                $error = 'Nama Lengkap, No. WhatsApp, dan Email tidak boleh kosong.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $error = 'Format email tidak valid.';
             } else {
-                $stmt = $db->prepare("
-                    UPDATE va_member 
-                    SET nama_member = ?, no_telp = ?, email = ?, institusi_asal = ?, nama_bank = ?, no_rekening = ?, atas_nama_rekening = ?
-                    WHERE id_member = ?
-                ");
-                $stmt->execute([
-                    $nama_member,
-                    $no_telp,
-                    $email,
-                    $institusi_asal,
-                    $nama_bank,
-                    $no_rekening,
-                    $atas_nama_rekening,
-                    $member['id_member']
-                ]);
+                // Cek duplikasi no_telp atau email milik member lain
+                $chk = $db->prepare("SELECT id_member FROM va_member WHERE (no_telp = ? OR email = ?) AND id_member != ? LIMIT 1");
+                $chk->execute([$no_telp, $email, $member['id_member']]);
+                if ($chk->fetch()) {
+                    $error = 'Nomor WhatsApp atau Email sudah digunakan oleh member lain.';
+                } else {
+                    $stmt = $db->prepare("
+                        UPDATE va_member 
+                        SET nama_member = ?, no_telp = ?, email = ?, institusi_asal = ?, nama_bank = ?, no_rekening = ?, atas_nama_rekening = ?
+                        WHERE id_member = ?
+                    ");
+                    $stmt->execute([
+                        $nama_member,
+                        $no_telp,
+                        $email,
+                        $institusi_asal,
+                        $nama_bank,
+                        $no_rekening,
+                        $atas_nama_rekening,
+                        $member['id_member']
+                    ]);
 
-                set_flash('success', 'Profil dan data rekening pencairan komisi berhasil diperbarui!');
+                    set_flash('success', 'Profil dan data rekening pencairan komisi berhasil diperbarui!');
+                    header('Location: profil.php');
+                    exit;
+                }
+            }
+        } elseif ($action === 'change_password') {
+            $password_lama = $_POST['password_lama'] ?? '';
+            $password_baru = $_POST['password_baru'] ?? '';
+            $password_confirm = $_POST['password_confirm'] ?? '';
+
+            if (empty($password_lama) || empty($password_baru)) {
+                $error = 'Password saat ini dan password baru harus diisi.';
+            } elseif (!password_verify($password_lama, $member['password']) && $member['password'] !== md5($password_lama)) {
+                $error = 'Password saat ini salah.';
+            } elseif (strlen($password_baru) < 6) {
+                $error = 'Password baru minimal harus 6 karakter.';
+            } elseif ($password_baru !== $password_confirm) {
+                $error = 'Konfirmasi password baru tidak cocok.';
+            } else {
+                $new_hash = password_hash($password_baru, PASSWORD_DEFAULT);
+                $stmt = $db->prepare("UPDATE va_member SET password = ? WHERE id_member = ?");
+                $stmt->execute([$new_hash, $member['id_member']]);
+
+                set_flash('success', 'Password Anda berhasil diperbarui!');
                 header('Location: profil.php');
                 exit;
             }
-        }
-    } elseif ($action === 'change_password') {
-        $password_lama = $_POST['password_lama'] ?? '';
-        $password_baru = $_POST['password_baru'] ?? '';
-        $password_confirm = $_POST['password_confirm'] ?? '';
-
-        if (empty($password_lama) || empty($password_baru)) {
-            $error = 'Password saat ini dan password baru harus diisi.';
-        } elseif (!password_verify($password_lama, $member['password']) && $member['password'] !== md5($password_lama)) {
-            $error = 'Password saat ini salah.';
-        } elseif (strlen($password_baru) < 6) {
-            $error = 'Password baru minimal harus 6 karakter.';
-        } elseif ($password_baru !== $password_confirm) {
-            $error = 'Konfirmasi password baru tidak cocok.';
-        } else {
-            $new_hash = password_hash($password_baru, PASSWORD_DEFAULT);
-            $stmt = $db->prepare("UPDATE va_member SET password = ? WHERE id_member = ?");
-            $stmt->execute([$new_hash, $member['id_member']]);
-
-            set_flash('success', 'Password Anda berhasil diperbarui!');
-            header('Location: profil.php');
-            exit;
         }
     }
 }
@@ -114,6 +118,7 @@ require_once __DIR__ . '/header.php';
         <div class="md:col-span-2 space-y-6">
             <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
                 <form action="profil.php" method="POST" class="space-y-6">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="update_profile">
 
                     <!-- Bagian Rekening Bank (Utama) -->
@@ -230,6 +235,7 @@ require_once __DIR__ . '/header.php';
                     <i class="fa-solid fa-key text-vym-600"></i> Ganti Password
                 </h3>
                 <form action="profil.php" method="POST" class="space-y-4">
+                    <?= csrf_field() ?>
                     <input type="hidden" name="action" value="change_password">
 
                     <div>

@@ -14,8 +14,10 @@ ServerSignature Off
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Lindungi file tersembunyi
+    # Lindungi file tersembunyi & file SQL migrasi
     RewriteRule ^\.(.*)$ - [F]
+    RewriteRule ^sql/ - [F]
+    RewriteRule \.sql$ - [F,NC]
 
     # Jangan ubah rute asset statis
     RewriteRule ^css/ - [L]
@@ -30,6 +32,7 @@ ServerSignature Off
     RewriteRule ^login/?$ login.php [L,QSA]
     RewriteRule ^register/?$ register.php [L,QSA]
     RewriteRule ^dashboard/?$ dashboard.php [L,QSA]
+    RewriteRule ^katalog-alkes/?$ katalog.php [L,QSA]
     RewriteRule ^ajukan-deal/?$ ajukan-deal.php [L,QSA]
     RewriteRule ^tracking-deal/?$ tracking-deal.php [L,QSA]
     RewriteRule ^profil/?$ profil.php [L,QSA]

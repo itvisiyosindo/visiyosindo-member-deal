@@ -13,7 +13,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $identifier = trim($_POST['identifier'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if (empty($identifier) || empty($password)) {
+    if (!verify_csrf()) {
+        $error = 'Sesi formulir tidak valid atau kedaluwarsa. Silakan muat ulang halaman dan coba lagi.';
+    } elseif (empty($identifier) || empty($password)) {
         $error = 'Silakan isi No. WhatsApp / Email dan Password.';
     } else {
         $db = get_db();
@@ -84,6 +86,7 @@ require_once __DIR__ . '/header.php';
             <?php endif; ?>
 
             <form action="login.php" method="POST" class="space-y-4">
+                <?= csrf_field() ?>
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                         No. WhatsApp / Email / Kode Member

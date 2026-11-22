@@ -68,6 +68,9 @@ require_once __DIR__ . '/header.php';
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
+                <a href="katalog.php" class="bg-slate-900/80 hover:bg-slate-800 text-white font-semibold px-4 py-3 rounded-xl border border-vym-500/40 transition flex items-center gap-2 text-sm">
+                    <i class="fa-solid fa-kit-medical text-vym-300"></i> Katalog Alkes
+                </a>
                 <a href="ajukan-deal.php" class="bg-vym-600 hover:bg-vym-500 text-white font-bold px-5 py-3 rounded-xl shadow-lg shadow-vym-600/30 transition flex items-center gap-2 text-sm">
                     <i class="fa-solid fa-circle-plus"></i> Ajukan Alkes Baru
                 </a>

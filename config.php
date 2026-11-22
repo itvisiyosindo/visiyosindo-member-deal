@@ -22,6 +22,8 @@ define('APP_NAME', 'Portal Member Visi Academy');
 define('COMPANY_NAME', 'PT Visi Yosindo Medikal');
 define('BASE_URL', './');
 define('OFFICE_URL', 'https://office.visiyosindo.id/');
+define('DEFAULT_KOMISI_PERSEN', 2.00);
+define('LINK_MANAGER_PIN', 'VYM2026!');
 
 /**
  * Singleton Database Connection (PDO)
@@ -143,6 +145,79 @@ function get_flash() {
 }
 
 /**
+ * CSRF Token Helpers
+ */
+function csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function csrf_field() {
+    return '<input type="hidden" name="csrf_token" value="' . htmlspecialchars(csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
+}
+
+function verify_csrf() {
+    $token = $_POST['csrf_token'] ?? '';
+    $session_token = $_SESSION['csrf_token'] ?? '';
+    return is_string($token) && is_string($session_token) && $session_token !== '' && hash_equals($session_token, $token);
+}
+
+/**
+ * Pastikan tabel va_katalog_produk tersedia dan terisi seed awal
+ */
+function ensure_katalog_table($db) {
+    try {
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS `va_katalog_produk` (
+                `id_produk` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                `nama_produk` VARCHAR(200) NOT NULL,
+                `kategori` VARCHAR(100) NOT NULL DEFAULT 'Radiologi',
+                `deskripsi_singkat` TEXT NULL,
+                `estimasi_harga` DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+                `url_gambar` VARCHAR(255) NULL,
+                `url_brosur` VARCHAR(255) NULL,
+                `status` ENUM('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
+                `urutan` INT NOT NULL DEFAULT 0,
+                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (`id_produk`),
+                KEY `idx_status_urutan` (`status`, `urutan`),
+                KEY `idx_kategori` (`kategori`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ");
+
+        $count = (int)$db->query("SELECT COUNT(*) FROM va_katalog_produk")->fetchColumn();
+        if ($count === 0) {
+            $seeds = [
+                ['USG Color Doppler 4D', 'USG & Diagnostik', 'Sistem USG Color Doppler 4D resolusi tinggi dengan probe convex, linear, dan transvaginal untuk OBGYN & radiologi.', 350000000.00, null, null, 'aktif', 1],
+                ['USG Portable B/W & Color', 'USG & Diagnostik', 'Unit USG portabel ringkas dan ringan untuk poli klinik, IGD, maupun kunjungan homecare dengan baterai tahan lama.', 125000000.00, null, null, 'aktif', 2],
+                ['X-Ray Stationary 500mA High Frequency', 'Radiologi', 'Pesawat sinar-X stasioner kapasitas 500mA High Frequency lengkap dengan meja bucky & bucky stand (siap integrasi DR).', 550000000.00, null, null, 'aktif', 3],
+                ['Mobile X-Ray Unit 100mA / 300mA', 'Radiologi', 'Unit radiografi mobile fleksibel untuk ruang ICU, IGD, dan rawat inap dengan manuver mudah di koridor rumah sakit.', 280000000.00, null, null, 'aktif', 4],
+                ['C-Arm Digital Radiography', 'Radiologi', 'Sistem fluoroskopi C-Arm digital untuk ruang operasi bedah tulang (ortopedi), urologi, dan tindakan intervensi.', 850000000.00, null, null, 'aktif', 5],
+                ['Dental X-Ray & Panoramic OPG', 'Dental & Imaging', 'Pencitraan radiografi gigi periapikal hingga Panoramic OPG digital presisi tinggi untuk klinik gigi dan rumah sakit.', 240000000.00, null, null, 'aktif', 6],
+                ['Mammography System', 'Radiologi', 'Sistem mammografi digital resolusi tinggi untuk skrining dan diagnostik kanker payudara dengan dosis radiasi rendah.', 950000000.00, null, null, 'aktif', 7],
+                ['Lead Apron & Proteksi Radiasi (Kaca Timbal / Thyroid)', 'Proteksi Radiasi', 'Perlengkapan proteksi radiasi standar BAPETEN: Lead Apron 0.5mm Pb, Thyroid Shield, Kacamata Pb, dan Kaca Timbal ruang X-Ray.', 8500000.00, null, null, 'aktif', 8],
+                ['Patient Monitor Multi-Parameter', 'ICU & Monitoring', 'Monitor pasien 5–7 parameter (ECG, SpO2, NIBP, RESP, TEMP) layar sentuh warna untuk ICU, OK, dan ruang rawat.', 28000000.00, null, null, 'aktif', 9],
+                ['Electrocardiograph (EKG / ECG 12 Channel)', 'Kardiologi & Poli', 'Alat rekam jantung EKG 12-lead digital lengkap dengan interpretasi otomatis, printer thermal, dan penyimpanan data.', 18500000.00, null, null, 'aktif', 10],
+            ];
+
+            $ins = $db->prepare("
+                INSERT INTO va_katalog_produk
+                (nama_produk, kategori, deskripsi_singkat, estimasi_harga, url_gambar, url_brosur, status, urutan)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            foreach ($seeds as $row) {
+                $ins->execute($row);
+            }
+        }
+    } catch (Throwable $e) {
+        // Jangan hentikan aplikasi jika DB belum memiliki hak DDL atau tabel sedang sibuk
+    }
+}
+
+/**
  * Generate Kode Member Unik (VA-XXXX)
  */
 function generate_kode_member($db) {
@@ -227,14 +302,14 @@ function send_wa_group_marketing($message) {
  * Notifikasi Pengajuan Kebutuhan Alkes Baru ke Grup Marketing
  */
 function notify_marketing_new_deal($deal_data, $member_data) {
-    $nama_member = $member_data['nama_lengkap'] ?? 'Member Visi Academy';
+    $nama_member = $member_data['nama_member'] ?? $member_data['nama_lengkap'] ?? 'Member Visi Academy';
     $kode_member = $member_data['kode_member'] ?? '-';
-    $institusi   = !empty($member_data['institusi']) ? $member_data['institusi'] : '-';
+    $institusi   = !empty($member_data['institusi_asal']) ? $member_data['institusi_asal'] : (!empty($member_data['institusi']) ? $member_data['institusi'] : '-');
     $no_telp     = !empty($member_data['no_telp']) ? $member_data['no_telp'] : '-';
 
     $nama_produk     = $deal_data['nama_produk'] ?? '-';
     $estimasi_nilai  = format_rupiah($deal_data['estimasi_nilai'] ?? 0);
-    $persen_komisi   = number_format((float)($deal_data['persen_komisi'] ?? 3), 2);
+    $persen_komisi   = number_format((float)($deal_data['persen_komisi'] ?? DEFAULT_KOMISI_PERSEN), 2);
     $nominal_komisi  = format_rupiah($deal_data['nominal_komisi'] ?? 0);
     $instansi_tujuan = !empty($deal_data['instansi_tujuan']) ? $deal_data['instansi_tujuan'] : '-';
     $contact_person  = !empty($deal_data['contact_person']) ? $deal_data['contact_person'] : '-';
@@ -255,6 +330,33 @@ function notify_marketing_new_deal($deal_data, $member_data) {
              "• *PIC / Kontak di Faskes*: {$contact_person}\n" .
              "• *Spesifikasi / Catatan*: {$spesifikasi}\n\n" .
              "Silakan tim marketing memvalidasi dan menindaklanjuti prospek ini di Sistem Office:\n" .
+             "👉 https://office.visiyosindo.id/member_visiacademy\n\n" .
+             "_Sistem Office PT Visi Yosindo Medikal_";
+
+    return send_wa_group_marketing($pesan);
+}
+
+/**
+ * Notifikasi Pendaftaran Afiliator / Member Baru ke Grup Marketing
+ */
+function notify_marketing_new_member($member_data) {
+    $nama_member = $member_data['nama_member'] ?? 'Member Visi Academy';
+    $kode_member = $member_data['kode_member'] ?? '-';
+    $institusi   = !empty($member_data['institusi_asal']) ? $member_data['institusi_asal'] : '-';
+    $no_telp     = !empty($member_data['no_telp']) ? $member_data['no_telp'] : '-';
+    $email       = !empty($member_data['email']) ? $member_data['email'] : '-';
+
+    $pesan = "🆕 *PENDAFTARAN AFILIATOR / MEMBER BARU* 🆕\n" .
+             "_Portal Member Visi Academy_\n\n" .
+             "Halo Tim Marketing PT Visi Yosindo Medikal,\n" .
+             "Telah bergabung member afiliator baru di Portal Visi Academy:\n\n" .
+             "👤 *Nama*: {$nama_member}\n" .
+             "🪪 *Kode Member*: {$kode_member}\n" .
+             "🏢 *Institusi Asal*: {$institusi}\n" .
+             "📞 *No. WhatsApp*: {$no_telp}\n" .
+             "✉️ *Email*: {$email}\n\n" .
+             "Akun member sudah aktif otomatis dan dapat langsung mengajukan prospek alkes.\n" .
+             "Kelola data member di Sistem Office:\n" .
              "👉 https://office.visiyosindo.id/member_visiacademy\n\n" .
              "_Sistem Office PT Visi Yosindo Medikal_";
 

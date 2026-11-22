@@ -1,3 +1,78 @@
+<?php
+require_once __DIR__ . '/config.php';
+
+if (isset($_GET['lm_logout'])) {
+    unset($_SESSION['lm_authenticated']);
+    header('Location: link-manager.php');
+    exit;
+}
+
+$lm_error = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lm_action']) && $_POST['lm_action'] === 'unlock') {
+    if (!verify_csrf()) {
+        $lm_error = 'Sesi formulir tidak valid. Silakan muat ulang halaman dan coba lagi.';
+    } else {
+        $pin_input = trim($_POST['lm_pin'] ?? '');
+        if ($pin_input !== '' && hash_equals(LINK_MANAGER_PIN, $pin_input)) {
+            $_SESSION['lm_authenticated'] = true;
+            header('Location: link-manager.php');
+            exit;
+        }
+        $lm_error = 'PIN akses salah. Silakan hubungi tim IT PT Visi Yosindo Medikal.';
+    }
+}
+
+if (empty($_SESSION['lm_authenticated'])):
+?>
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Akses Terbatas - Visiyosindo Link Manager</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="assets/logo.png">
+</head>
+<body style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;background:linear-gradient(135deg,#040d1f 0%,#071e46 60%,#0047ba 100%);">
+  <div style="background:#ffffff;border-radius:16px;max-width:420px;width:100%;box-shadow:0 20px 35px -10px rgba(0,0,0,0.35);overflow:hidden;border:1px solid #e2e8f0;">
+    <div style="background:linear-gradient(135deg,#041128,#073273);padding:1.75rem 1.5rem;text-align:center;color:#ffffff;">
+      <div style="width:58px;height:58px;border-radius:14px;background:#ffffff;padding:6px;margin:0 auto 0.75rem;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+        <img src="assets/logo.png" alt="PT Visi Yosindo Medikal" style="width:100%;height:100%;object-fit:contain;">
+      </div>
+      <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:0.25rem;">Visiyosindo Link Manager</h1>
+      <p style="font-size:0.8rem;color:#bfdbfe;">Masukkan PIN internal untuk mengelola tautan singkat.</p>
+    </div>
+
+    <form method="POST" action="link-manager.php" style="padding:1.75rem 1.5rem;">
+      <?= csrf_field() ?>
+      <input type="hidden" name="lm_action" value="unlock">
+
+      <?php if ($lm_error !== ''): ?>
+        <div style="margin-bottom:1rem;padding:0.75rem 0.9rem;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:0.85rem;font-weight:500;">
+          <?= htmlspecialchars($lm_error) ?>
+        </div>
+      <?php endif; ?>
+
+      <div class="form-group">
+        <label class="form-label" for="lm_pin">PIN Akses Admin</label>
+        <input type="password" id="lm_pin" name="lm_pin" class="form-input" placeholder="Masukkan PIN akses..." required autofocus>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+        Buka Link Manager
+      </button>
+
+      <div style="margin-top:1rem;text-align:center;">
+        <a href="/" style="font-size:0.8rem;color:#64748b;text-decoration:none;font-weight:600;">&larr; Kembali ke Portal Member</a>
+      </div>
+    </form>
+  </div>
+</body>
+</html>
+<?php
+    exit;
+endif;
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -34,6 +109,10 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           Buat Link Baru
         </button>
+        <a href="link-manager.php?lm_logout=1" class="btn btn-outline btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;" title="Kunci kembali akses Link Manager">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          Kunci Akses
+        </a>
       </div>
     </div>
   </nav>
