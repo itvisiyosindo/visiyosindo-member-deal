@@ -5,27 +5,39 @@ require_login();
 $member = current_member();
 $db = get_db();
 
-// Filter Status & Search
+// Filter Status, Search, & Paginasi
 $status_filter = trim($_GET['status'] ?? 'all');
 $search = trim($_GET['q'] ?? '');
+$page = max(1, (int)($_GET['page'] ?? 1));
+$per_page = 25;
 
-$query = "SELECT * FROM va_member_deal WHERE id_member = ?";
+$where = " WHERE id_member = ?";
 $params = [$member['id_member']];
 
 if (in_array($status_filter, ['Pending', 'Deal', 'Batal'])) {
-    $query .= " AND status_deal = ?";
+    $where .= " AND status_deal = ?";
     $params[] = $status_filter;
 }
 
 if (!empty($search)) {
-    $query .= " AND (nama_produk LIKE ? OR catatan LIKE ?)";
-    $params[] = "%$search%";
-    $params[] = "%$search%";
+    $like = '%' . escape_like($search) . '%';
+    $where .= " AND (nama_produk LIKE ? ESCAPE '\\\\' OR catatan LIKE ? ESCAPE '\\\\')";
+    $params[] = $like;
+    $params[] = $like;
 }
 
-$query .= " ORDER BY created_at DESC";
+$filtered_cnt = $db->prepare("SELECT COUNT(*) FROM va_member_deal" . $where);
+$filtered_cnt->execute($params);
+$total_filtered = (int)$filtered_cnt->fetchColumn();
+$total_pages = max(1, (int)ceil($total_filtered / $per_page));
+if ($page > $total_pages) {
+    $page = $total_pages;
+}
+$offset = ($page - 1) * $per_page;
 
-$stmt = $db->prepare($query);
+$limit_sql = (int)$per_page;
+$offset_sql = (int)$offset;
+$stmt = $db->prepare("SELECT * FROM va_member_deal" . $where . " ORDER BY created_at DESC LIMIT {$limit_sql} OFFSET {$offset_sql}");
 $stmt->execute($params);
 $deals = $stmt->fetchAll();
 
@@ -197,7 +209,7 @@ require_once __DIR__ . '/header.php';
                                              'status' => $deal['status_deal'],
                                              'status_bayar' => $deal['status_bayar'] ?? 'Belum Ditransfer',
                                              'tgl_transfer' => !empty($deal['tgl_transfer']) ? format_tanggal_id($deal['tgl_transfer']) : '-',
-                                             'bukti_url' => !empty($deal['bukti_transfer']) ? (OFFICE_URL . 'uploads/bukti_komisi/' . $deal['bukti_transfer']) : '',
+                                             'bukti_url' => !empty($deal['bukti_transfer']) ? (OFFICE_URL . 'uploads/bukti_komisi/' . rawurlencode($deal['bukti_transfer'])) : '',
                                              'catatan_transfer' => $deal['catatan_transfer'] ?? '',
                                              'catatan' => $deal['catatan'] ?: 'Tidak ada catatan tambahan.'
                                          ])) ?>)"
@@ -211,6 +223,22 @@ require_once __DIR__ . '/header.php';
                 </tbody>
             </table>
         </div>
+
+        <?php if ($total_pages > 1):
+            $base_qs = 'tracking-deal.php?status=' . urlencode($status_filter) . ($search !== '' ? '&q=' . urlencode($search) : '');
+        ?>
+            <div class="px-5 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+                <span class="text-slate-500">Halaman <strong><?= $page ?></strong> dari <strong><?= $total_pages ?></strong> (<?= $total_filtered ?> prospek)</span>
+                <div class="flex items-center gap-2">
+                    <?php if ($page > 1): ?>
+                        <a href="<?= htmlspecialchars($base_qs . '&page=' . ($page - 1)) ?>" class="px-3 py-1.5 rounded-lg bg-white border border-slate-300 font-semibold text-slate-700 hover:bg-slate-100 transition">&larr; Sebelumnya</a>
+                    <?php endif; ?>
+                    <?php if ($page < $total_pages): ?>
+                        <a href="<?= htmlspecialchars($base_qs . '&page=' . ($page + 1)) ?>" class="px-3 py-1.5 rounded-lg bg-vym-600 hover:bg-vym-700 font-semibold text-white transition">Berikutnya &rarr;</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 

@@ -4,10 +4,11 @@ require_login();
 
 $member = current_member();
 $db = get_db();
-ensure_katalog_table($db);
 
 $kategori_filter = trim($_GET['kategori'] ?? 'all');
 $search = trim($_GET['q'] ?? '');
+$page = max(1, (int)($_GET['page'] ?? 1));
+$per_page = 24;
 
 /**
  * Resolve URL gambar / brosur: jika relatif, gabungkan dengan OFFICE_URL
@@ -25,30 +26,46 @@ function resolve_office_asset_url($url) {
 
 $categories = [];
 $products = [];
+$total_products = 0;
+$total_pages = 1;
+$load_error = '';
 
 try {
     $cat_stmt = $db->query("SELECT DISTINCT kategori FROM va_katalog_produk WHERE status = 'aktif' ORDER BY kategori ASC");
     $categories = $cat_stmt->fetchAll(PDO::FETCH_COLUMN);
 
-    $query = "SELECT * FROM va_katalog_produk WHERE status = 'aktif'";
+    $where = " WHERE status = 'aktif'";
     $params = [];
 
     if ($kategori_filter !== 'all' && $kategori_filter !== '') {
-        $query .= " AND kategori = ?";
+        $where .= " AND kategori = ?";
         $params[] = $kategori_filter;
     }
 
     if ($search !== '') {
-        $query .= " AND (nama_produk LIKE ? OR deskripsi_singkat LIKE ?)";
-        $params[] = "%$search%";
-        $params[] = "%$search%";
+        $like = '%' . escape_like($search) . '%';
+        $where .= " AND (nama_produk LIKE ? ESCAPE '\\\\' OR deskripsi_singkat LIKE ? ESCAPE '\\\\')";
+        $params[] = $like;
+        $params[] = $like;
     }
 
-    $query .= " ORDER BY urutan ASC, id_produk ASC";
-    $stmt = $db->prepare($query);
+    $cnt_stmt = $db->prepare("SELECT COUNT(*) FROM va_katalog_produk" . $where);
+    $cnt_stmt->execute($params);
+    $total_products = (int)$cnt_stmt->fetchColumn();
+    $total_pages = max(1, (int)ceil($total_products / $per_page));
+    if ($page > $total_pages) {
+        $page = $total_pages;
+    }
+    $offset = ($page - 1) * $per_page;
+
+    $limit_sql = (int)$per_page;
+    $offset_sql = (int)$offset;
+    $stmt = $db->prepare("SELECT * FROM va_katalog_produk" . $where . " ORDER BY urutan ASC, id_produk ASC LIMIT {$limit_sql} OFFSET {$offset_sql}");
     $stmt->execute($params);
     $products = $stmt->fetchAll();
 } catch (Throwable $e) {
+    error_log('[Portal Member Katalog] Query gagal: ' . $e->getMessage());
+    $load_error = 'Katalog sementara gagal dimuat. Anda tetap dapat mengajukan kebutuhan alkes secara manual.';
     $categories = [];
     $products = [];
 }
@@ -120,6 +137,13 @@ require_once __DIR__ . '/header.php';
     </div>
 
     <!-- Product Grid -->
+    <?php if ($load_error !== ''): ?>
+        <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+            <span><?= htmlspecialchars($load_error) ?></span>
+        </div>
+    <?php endif; ?>
+
     <?php if (empty($products)): ?>
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">
             <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-3 text-slate-400 text-2xl">
@@ -235,6 +259,22 @@ require_once __DIR__ . '/header.php';
                 </div>
             <?php endforeach; ?>
         </div>
+
+        <?php if ($total_pages > 1):
+            $base_qs = 'katalog.php?kategori=' . urlencode($kategori_filter) . ($search !== '' ? '&q=' . urlencode($search) : '');
+        ?>
+            <div class="flex items-center justify-between bg-white px-4 py-3 rounded-2xl border border-slate-200 shadow-sm text-xs">
+                <span class="text-slate-500">Halaman <strong><?= $page ?></strong> dari <strong><?= $total_pages ?></strong> (<?= $total_products ?> produk)</span>
+                <div class="flex items-center gap-2">
+                    <?php if ($page > 1): ?>
+                        <a href="<?= htmlspecialchars($base_qs . '&page=' . ($page - 1)) ?>" class="px-3 py-1.5 rounded-lg border border-slate-300 font-semibold text-slate-700 hover:bg-slate-50 transition">&larr; Sebelumnya</a>
+                    <?php endif; ?>
+                    <?php if ($page < $total_pages): ?>
+                        <a href="<?= htmlspecialchars($base_qs . '&page=' . ($page + 1)) ?>" class="px-3 py-1.5 rounded-lg bg-vym-600 hover:bg-vym-700 font-semibold text-white transition">Berikutnya &rarr;</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+        <?php endif; ?>
     <?php endif; ?>
 
     <!-- Info Disclaimer -->

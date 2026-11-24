@@ -4,13 +4,12 @@ require_login();
 
 $member = current_member();
 $db = get_db();
-ensure_katalog_table($db);
 $error = '';
 $locked_komisi = (float)DEFAULT_KOMISI_PERSEN;
 
 $prefill_produk = trim($_GET['produk'] ?? '');
-$raw_prefill_harga = str_replace(['Rp', '.', ' ', ','], '', $_GET['harga'] ?? '');
-$prefill_harga = (is_numeric($raw_prefill_harga) && (float)$raw_prefill_harga > 0) ? (float)$raw_prefill_harga : '';
+$prefill_num = parse_rupiah_input($_GET['harga'] ?? '');
+$prefill_harga = ($prefill_num > 0 && $prefill_num <= MAX_ESTIMASI_NILAI) ? $prefill_num : '';
 
 $form = [
     'nama_produk' => $prefill_produk,
@@ -27,14 +26,14 @@ try {
     $kat_stmt = $db->query("SELECT nama_produk FROM va_katalog_produk WHERE status = 'aktif' ORDER BY urutan ASC, id_produk ASC");
     $katalog_suggestions = $kat_stmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (Throwable $e) {
+    error_log('[Portal Member Ajukan] Gagal memuat saran katalog: ' . $e->getMessage());
     $katalog_suggestions = [];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form['nama_produk'] = trim($_POST['nama_produk'] ?? '');
     $form['instansi_tujuan'] = trim($_POST['instansi_tujuan'] ?? '');
-    $raw_estimasi = preg_replace('/\D/', '', $_POST['estimasi_nilai'] ?? '0');
-    $estimasi_num = (float)$raw_estimasi;
+    $estimasi_num = parse_rupiah_input($_POST['estimasi_nilai'] ?? '0');
     $form['estimasi_nilai'] = $estimasi_num > 0 ? number_format($estimasi_num, 0, ',', '.') : '';
     // Kunci persentase komisi di server sesuai standar (2%)
     $form['persen_komisi'] = $locked_komisi;
@@ -45,13 +44,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Sesi formulir tidak valid atau kedaluwarsa. Silakan muat ulang halaman dan coba lagi.';
     } elseif (empty($form['nama_produk'])) {
         $error = 'Nama alat kesehatan / produk wajib diisi.';
+    } elseif (mb_strlen($form['nama_produk']) > 255) {
+        $error = 'Nama alat kesehatan maksimal 255 karakter.';
     } elseif ($estimasi_num <= 0) {
         $error = 'Estimasi nilai pengadaan harus lebih dari 0.';
+    } elseif ($estimasi_num > MAX_ESTIMASI_NILAI) {
+        $error = 'Estimasi nilai pengadaan melebihi batas maksimum (' . format_rupiah(MAX_ESTIMASI_NILAI) . ').';
     } else {
-        // Hitung nominal komisi
-        $nominal_komisi = ($estimasi_num * $locked_komisi) / 100;
+        // Cegah duplikat akibat klik ganda dalam 30 detik terakhir
+        $dup = $db->prepare("
+            SELECT id_deal FROM va_member_deal
+            WHERE id_member = ? AND nama_produk = ? AND estimasi_nilai = ?
+              AND created_at >= (NOW() - INTERVAL 30 SECOND)
+            LIMIT 1
+        ");
+        $dup->execute([$member['id_member'], $form['nama_produk'], $estimasi_num]);
+        if ($dup->fetch()) {
+            rotate_csrf();
+            set_flash('info', "Pengajuan \"{$form['nama_produk']}\" sudah tercatat sebelumnya.");
+            header('Location: tracking-deal.php');
+            exit;
+        }
 
-        // Gabungkan catatan agar lengkap dan mudah dibaca oleh ERP kantor
+        // Hitung nominal komisi (dibulatkan 2 desimal sesuai DECIMAL(15,2))
+        $nominal_komisi = round(($estimasi_num * $locked_komisi) / 100, 2);
+
+        // Gabungkan catatan agar lengkap dan mudah dibaca di Sistem Office
         $catatan_parts = [];
         if (!empty($form['instansi_tujuan'])) {
             $catatan_parts[] = "Faskes Tujuan: " . $form['instansi_tujuan'];
@@ -80,6 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $catatan_final
             ]);
 
+            rotate_csrf();
+
             // Kirim notifikasi WA otomatis ke Grup Marketing PT Visi Yosindo Medikal
             $deal_data = [
                 'nama_produk'     => $form['nama_produk'],
@@ -90,13 +110,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'contact_person'  => $form['contact_person'],
                 'spesifikasi'     => $form['spesifikasi']
             ];
-            @notify_marketing_new_deal($deal_data, $member);
+            $wa_sent = notify_marketing_new_deal($deal_data, $member);
 
-            set_flash('success', "Prospek kebutuhan alkes \"{$form['nama_produk']}\" berhasil diajukan! Notifikasi telah dikirimkan ke Tim Marketing kami untuk segera ditindaklanjuti.");
+            $flash_msg = $wa_sent
+                ? "Prospek kebutuhan alkes \"{$form['nama_produk']}\" berhasil diajukan! Notifikasi telah dikirimkan ke Tim Marketing kami untuk segera ditindaklanjuti."
+                : "Prospek kebutuhan alkes \"{$form['nama_produk']}\" berhasil tersimpan di sistem! Tim Marketing kami akan menindaklanjuti melalui Sistem Office.";
+            set_flash('success', $flash_msg);
             header('Location: tracking-deal.php');
             exit;
         } catch (PDOException $e) {
-            $error = 'Gagal menyimpan pengajuan prospek: ' . $e->getMessage();
+            error_log('[Portal Member Ajukan] DB insert failed: ' . $e->getMessage());
+            $error = 'Gagal menyimpan pengajuan prospek. Silakan coba beberapa saat lagi.';
         }
     }
 }
@@ -144,25 +168,9 @@ require_once __DIR__ . '/header.php';
                                 placeholder="Ketik atau pilih rekomendasi (misal: USG Doppler 4D, X-Ray Stationary 500mA, C-Arm)"
                                 class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             <datalist id="alkesSuggestions">
-                                <?php if (!empty($katalog_suggestions)): ?>
-                                    <?php foreach ($katalog_suggestions as $nama_item): ?>
-                                        <option value="<?= htmlspecialchars($nama_item) ?>">
-                                    <?php endforeach; ?>
-                                <?php else: ?>
-                                    <option value="USG Color Doppler 4D">
-                                    <option value="USG Portable B/W & Color">
-                                    <option value="X-Ray Stationary 500mA High Frequency">
-                                    <option value="Mobile X-Ray Unit 100mA / 300mA">
-                                    <option value="C-Arm Digital Radiography">
-                                    <option value="Dental X-Ray & Panoramic OPG">
-                                    <option value="Mammography System">
-                                    <option value="Lead Apron & Proteksi Radiasi (Kaca Timbal / Thyroid)">
-                                    <option value="Patient Monitor Multi-Parameter">
-                                    <option value="Defibrillator AED / Manual">
-                                    <option value="Electrocardiograph (EKG / ECG 12 Channel)">
-                                    <option value="Autoclave & Mesin Sterilisasi RS">
-                                    <option value="Lampu Operasi & Meja Operasi Elektrik">
-                                <?php endif; ?>
+                                <?php foreach ($katalog_suggestions as $nama_item): ?>
+                                    <option value="<?= htmlspecialchars($nama_item) ?>">
+                                <?php endforeach; ?>
                             </datalist>
                         </div>
 
@@ -264,7 +272,7 @@ require_once __DIR__ . '/header.php';
                 </div>
 
                 <div class="pt-2 flex flex-col sm:flex-row items-center gap-3">
-                    <button type="submit" class="w-full sm:flex-1 bg-vym-600 hover:bg-vym-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-vym-600/20 transition flex items-center justify-center gap-2">
+                    <button type="submit" id="dealSubmitBtn" class="w-full sm:flex-1 bg-vym-600 hover:bg-vym-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg shadow-vym-600/20 transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-paper-plane"></i> Kirim Pengajuan Kebutuhan Alkes
                     </button>
                     <a href="dashboard.php" class="w-full sm:w-auto text-center px-6 py-3.5 rounded-xl border border-slate-300 font-semibold text-slate-700 hover:bg-slate-50 transition text-sm">
@@ -277,6 +285,8 @@ require_once __DIR__ . '/header.php';
 </div>
 
 <script>
+const dealForm = document.getElementById('dealForm');
+const dealSubmitBtn = document.getElementById('dealSubmitBtn');
 const nilaiInput = document.getElementById('estimasiNilaiInput');
 const persenInput = document.getElementById('persenKomisiInput');
 const calculatedNominal = document.getElementById('calculatedNominal');
@@ -289,17 +299,22 @@ function updateCalculation() {
     const rawVal = nilaiInput.value.replace(/\D/g, '');
     const numVal = parseFloat(rawVal) || 0;
     const persen = parseFloat(persenInput.value) || 0;
-    
-    if (rawVal) {
-        nilaiInput.value = parseInt(rawVal, 10).toLocaleString('id-ID');
-    }
-    
+
+    nilaiInput.value = rawVal ? parseInt(rawVal, 10).toLocaleString('id-ID') : '';
+
     const komisi = (numVal * persen) / 100;
     calculatedNominal.textContent = formatNumberRupiah(komisi);
 }
 
 nilaiInput.addEventListener('input', updateCalculation);
 updateCalculation();
+
+if (dealForm && dealSubmitBtn) {
+    dealForm.addEventListener('submit', function () {
+        dealSubmitBtn.disabled = true;
+        dealSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirim Pengajuan...';
+    });
+}
 </script>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

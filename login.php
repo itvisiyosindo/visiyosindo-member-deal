@@ -7,52 +7,78 @@ if (is_logged_in()) {
 }
 
 $error = '';
+$warning = (($_GET['msg'] ?? '') === 'inactive')
+    ? 'Sesi berakhir karena akun Anda dinonaktifkan. Silakan hubungi tim PT Visi Yosindo Medikal.'
+    : '';
 $identifier = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $identifier = trim($_POST['identifier'] ?? '');
     $password = $_POST['password'] ?? '';
+    $rl = rate_limit_check('login', 5, 600);
 
     if (!verify_csrf()) {
         $error = 'Sesi formulir tidak valid atau kedaluwarsa. Silakan muat ulang halaman dan coba lagi.';
+    } elseif (!$rl['allowed']) {
+        $menit = (int)ceil($rl['retry_after'] / 60);
+        $error = "Terlalu banyak percobaan login gagal. Silakan coba lagi dalam {$menit} menit.";
     } elseif (empty($identifier) || empty($password)) {
         $error = 'Silakan isi No. WhatsApp / Email dan Password.';
     } else {
         $db = get_db();
-        
-        // Cari berdasarkan email atau no_telp atau kode_member
-        $stmt = $db->prepare("SELECT * FROM va_member WHERE email = ? OR no_telp = ? OR kode_member = ? LIMIT 1");
-        $stmt->execute([$identifier, $identifier, $identifier]);
+        $norm_email = normalize_email($identifier);
+        $norm_phone = normalize_phone($identifier);
+
+        // Cari berdasarkan email (case-insensitive), kode_member, atau no_telp (termasuk format lama/62)
+        $sql = "SELECT * FROM va_member WHERE LOWER(email) = ? OR kode_member = ? OR no_telp = ?";
+        $params = [$norm_email, $identifier, $identifier];
+        if ($norm_phone !== '') {
+            $sql .= " OR REPLACE(REPLACE(REPLACE(no_telp, '-', ''), ' ', ''), '+', '') = ?";
+            $params[] = $norm_phone;
+            if (strpos($norm_phone, '0') === 0) {
+                $sql .= " OR REPLACE(REPLACE(REPLACE(no_telp, '-', ''), ' ', ''), '+', '') = ?";
+                $params[] = '62' . substr($norm_phone, 1);
+            }
+        }
+        $sql .= " LIMIT 1";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
         $member = $stmt->fetch();
 
         if (!$member) {
+            rate_limit_hit('login', 600);
             $error = 'Akun tidak ditemukan. Periksa kembali No. WhatsApp atau Email Anda.';
-        } elseif ($member['status'] !== 'aktif') {
+        } elseif (($member['status'] ?? '') !== 'aktif') {
+            rate_limit_hit('login', 600);
             $error = 'Akun Anda sedang dinonaktifkan. Silakan hubungi admin Visi Yosindo.';
         } else {
-            // Verifikasi Password
+            // Cek password kosong lebih dulu agar PHP 8.3 tidak warning saat hash NULL
+            $stored_hash = (string)($member['password'] ?? '');
             $password_valid = false;
-            
-            if (password_verify($password, $member['password'])) {
+
+            if ($stored_hash === '') {
+                $error = 'Akun Anda belum memiliki password. Silakan hubungi admin Visi Yosindo untuk aktivasi.';
+            } elseif (password_verify($password, $stored_hash)) {
                 $password_valid = true;
-            } elseif ($member['password'] === md5($password)) {
+            } elseif (hash_equals($stored_hash, md5($password))) {
                 $password_valid = true;
                 $new_hash = password_hash($password, PASSWORD_DEFAULT);
                 $up = $db->prepare("UPDATE va_member SET password = ? WHERE id_member = ?");
                 $up->execute([$new_hash, $member['id_member']]);
-            } elseif (empty($member['password'])) {
-                $error = 'Akun Anda belum memiliki password. Silakan hubungi admin Visi Yosindo atau daftar ulang.';
             }
 
             if ($password_valid) {
-                $_SESSION['member_id'] = $member['id_member'];
-                $_SESSION['member_name'] = $member['nama_member'];
-                $_SESSION['member_code'] = $member['kode_member'];
+                rate_limit_reset('login');
+                session_regenerate_id(true);
+                rotate_csrf();
+                $_SESSION['member_id'] = (int)$member['id_member'];
 
                 set_flash('success', 'Selamat datang kembali, ' . $member['nama_member'] . '!');
                 header('Location: dashboard.php');
                 exit;
             } else {
+                rate_limit_hit('login', 600);
                 if (empty($error)) {
                     $error = 'Password yang Anda masukkan salah.';
                 }
@@ -78,6 +104,13 @@ require_once __DIR__ . '/header.php';
 
         <!-- Form Body -->
         <div class="p-6 sm:p-8">
+            <?php if (!empty($warning)): ?>
+                <div class="mb-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation flex-shrink-0"></i>
+                    <span><?= htmlspecialchars($warning) ?></span>
+                </div>
+            <?php endif; ?>
+
             <?php if (!empty($error)): ?>
                 <div class="mb-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-2">
                     <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>

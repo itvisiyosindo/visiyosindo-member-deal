@@ -14,8 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($action === 'update_profile') {
             $nama_member = trim($_POST['nama_member'] ?? '');
-            $no_telp = trim($_POST['no_telp'] ?? '');
-            $email = trim($_POST['email'] ?? '');
+            $no_telp = normalize_phone($_POST['no_telp'] ?? '');
+            $email = normalize_email($_POST['email'] ?? '');
             $institusi_asal = trim($_POST['institusi_asal'] ?? '');
             $nama_bank = trim($_POST['nama_bank'] ?? '');
             $no_rekening = trim($_POST['no_rekening'] ?? '');
@@ -23,64 +23,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (empty($nama_member) || empty($no_telp) || empty($email)) {
                 $error = 'Nama Lengkap, No. WhatsApp, dan Email tidak boleh kosong.';
-            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $error = 'Format email tidak valid.';
+            } elseif (strlen($no_telp) < 9 || strlen($no_telp) > 15) {
+                $error = 'Nomor WhatsApp harus terdiri dari 9 hingga 15 digit angka.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($email) > 100) {
+                $error = 'Format email tidak valid atau terlalu panjang.';
+            } elseif (mb_strlen($nama_member) > 255 || mb_strlen($institusi_asal) > 255) {
+                $error = 'Nama lengkap atau institusi maksimal 255 karakter.';
+            } elseif (mb_strlen($nama_bank) > 50 || mb_strlen($no_rekening) > 50 || mb_strlen($atas_nama_rekening) > 100) {
+                $error = 'Data rekening melebihi batas panjang yang diizinkan.';
             } else {
-                // Cek duplikasi no_telp atau email milik member lain
-                $chk = $db->prepare("SELECT id_member FROM va_member WHERE (no_telp = ? OR email = ?) AND id_member != ? LIMIT 1");
-                $chk->execute([$no_telp, $email, $member['id_member']]);
+                // Cek duplikasi no_telp (termasuk format 08/628/strip) atau email milik member lain
+                $phone_alt = (strpos($no_telp, '0') === 0) ? ('62' . substr($no_telp, 1)) : $no_telp;
+                $chk = $db->prepare("
+                    SELECT id_member FROM va_member
+                    WHERE (LOWER(email) = ? OR REPLACE(REPLACE(REPLACE(no_telp, '-', ''), ' ', ''), '+', '') IN (?, ?))
+                      AND id_member != ?
+                    LIMIT 1
+                ");
+                $chk->execute([$email, $no_telp, $phone_alt, $member['id_member']]);
                 if ($chk->fetch()) {
                     $error = 'Nomor WhatsApp atau Email sudah digunakan oleh member lain.';
                 } else {
-                    $stmt = $db->prepare("
-                        UPDATE va_member 
-                        SET nama_member = ?, no_telp = ?, email = ?, institusi_asal = ?, nama_bank = ?, no_rekening = ?, atas_nama_rekening = ?
-                        WHERE id_member = ?
-                    ");
-                    $stmt->execute([
-                        $nama_member,
-                        $no_telp,
-                        $email,
-                        $institusi_asal,
-                        $nama_bank,
-                        $no_rekening,
-                        $atas_nama_rekening,
-                        $member['id_member']
-                    ]);
+                    try {
+                        $stmt = $db->prepare("
+                            UPDATE va_member 
+                            SET nama_member = ?, no_telp = ?, email = ?, institusi_asal = ?, nama_bank = ?, no_rekening = ?, atas_nama_rekening = ?
+                            WHERE id_member = ?
+                        ");
+                        $stmt->execute([
+                            $nama_member,
+                            $no_telp,
+                            $email,
+                            $institusi_asal,
+                            $nama_bank,
+                            $no_rekening,
+                            $atas_nama_rekening,
+                            $member['id_member']
+                        ]);
 
-                    set_flash('success', 'Profil dan data rekening pencairan komisi berhasil diperbarui!');
-                    header('Location: profil.php');
-                    exit;
+                        rotate_csrf();
+                        set_flash('success', 'Profil dan data rekening pencairan komisi berhasil diperbarui!');
+                        header('Location: profil.php');
+                        exit;
+                    } catch (PDOException $e) {
+                        error_log('[Portal Member Profil] Update failed: ' . $e->getMessage());
+                        $error = 'Gagal memperbarui data profil. Silakan coba beberapa saat lagi.';
+                    }
                 }
             }
         } elseif ($action === 'change_password') {
             $password_lama = $_POST['password_lama'] ?? '';
             $password_baru = $_POST['password_baru'] ?? '';
             $password_confirm = $_POST['password_confirm'] ?? '';
+            $stored_hash = (string)($member['password'] ?? '');
+
+            $old_valid = $stored_hash !== ''
+                && (password_verify($password_lama, $stored_hash) || hash_equals($stored_hash, md5($password_lama)));
 
             if (empty($password_lama) || empty($password_baru)) {
                 $error = 'Password saat ini dan password baru harus diisi.';
-            } elseif (!password_verify($password_lama, $member['password']) && $member['password'] !== md5($password_lama)) {
+            } elseif (!$old_valid) {
                 $error = 'Password saat ini salah.';
             } elseif (strlen($password_baru) < 6) {
                 $error = 'Password baru minimal harus 6 karakter.';
             } elseif ($password_baru !== $password_confirm) {
                 $error = 'Konfirmasi password baru tidak cocok.';
             } else {
-                $new_hash = password_hash($password_baru, PASSWORD_DEFAULT);
-                $stmt = $db->prepare("UPDATE va_member SET password = ? WHERE id_member = ?");
-                $stmt->execute([$new_hash, $member['id_member']]);
+                try {
+                    $new_hash = password_hash($password_baru, PASSWORD_DEFAULT);
+                    $stmt = $db->prepare("UPDATE va_member SET password = ? WHERE id_member = ?");
+                    $stmt->execute([$new_hash, $member['id_member']]);
 
-                set_flash('success', 'Password Anda berhasil diperbarui!');
-                header('Location: profil.php');
-                exit;
+                    session_regenerate_id(true);
+                    rotate_csrf();
+                    set_flash('success', 'Password Anda berhasil diperbarui!');
+                    header('Location: profil.php');
+                    exit;
+                } catch (PDOException $e) {
+                    error_log('[Portal Member Profil] Password update failed: ' . $e->getMessage());
+                    $error = 'Gagal memperbarui password. Silakan coba beberapa saat lagi.';
+                }
             }
         }
     }
 }
-
-// Refresh data terbaru
-$member = current_member();
 
 $page_title = 'Rekening & Profil Member';
 require_once __DIR__ . '/header.php';
@@ -187,7 +213,7 @@ require_once __DIR__ . '/header.php';
                                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                                     Nama Lengkap & Gelar <span class="text-rose-500">*</span>
                                 </label>
-                                <input type="text" name="nama_member" value="<?= htmlspecialchars($member['nama_member']) ?>" required
+                                <input type="text" name="nama_member" value="<?= htmlspecialchars((string)($member['nama_member'] ?? '')) ?>" required
                                     class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
 
@@ -195,7 +221,7 @@ require_once __DIR__ . '/header.php';
                                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                                     No. WhatsApp <span class="text-rose-500">*</span>
                                 </label>
-                                <input type="text" name="no_telp" value="<?= htmlspecialchars($member['no_telp']) ?>" required
+                                <input type="text" name="no_telp" value="<?= htmlspecialchars((string)($member['no_telp'] ?? '')) ?>" required
                                     class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
 
@@ -203,7 +229,7 @@ require_once __DIR__ . '/header.php';
                                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                                     Email <span class="text-rose-500">*</span>
                                 </label>
-                                <input type="email" name="email" value="<?= htmlspecialchars($member['email']) ?>" required
+                                <input type="email" name="email" value="<?= htmlspecialchars((string)($member['email'] ?? '')) ?>" required
                                     class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>
 
@@ -211,7 +237,7 @@ require_once __DIR__ . '/header.php';
                                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                                     Institusi Asal / Rumah Sakit / Faskes
                                 </label>
-                                <input type="text" name="institusi_asal" value="<?= htmlspecialchars($member['institusi_asal']) ?>"
+                                <input type="text" name="institusi_asal" value="<?= htmlspecialchars((string)($member['institusi_asal'] ?? '')) ?>"
                                     placeholder="Contoh: RSUD Pasar Minggu"
                                     class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-vym-600 focus:bg-white transition">
                             </div>

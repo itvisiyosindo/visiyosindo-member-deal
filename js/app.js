@@ -107,6 +107,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const tr = document.createElement("tr");
 
       const fullShortUrl = `https://${CONFIG.domain}/${link.slug}`;
+      const safeFullShortUrl = escapeHtml(fullShortUrl);
+      const safeSlug = escapeHtml(link.slug);
+      const safeId = escapeHtml(link.id);
+      const safeTargetUrl = /^https?:\/\//i.test(String(link.targetUrl || "").trim())
+        ? escapeHtml(link.targetUrl)
+        : "#";
       // URL bersih langsung ke slug
       const cleanSlugUrl = `/${encodeURIComponent(link.slug)}`;
 
@@ -115,18 +121,18 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="link-info">
             <span class="link-title">${escapeHtml(link.title || link.slug)}</span>
             <div style="display:flex; align-items:center; gap: 0.5rem; margin-top: 0.2rem;">
-              <span class="short-link-badge">/${escapeHtml(link.slug)}</span>
-              <button class="btn-icon btn-copy" title="Salin Link" data-url="${fullShortUrl}">
+              <span class="short-link-badge">/${safeSlug}</span>
+              <button class="btn-icon btn-copy" title="Salin Link" data-url="${safeFullShortUrl}">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               </button>
-              <a href="${cleanSlugUrl}" target="_blank" class="btn-icon" title="Buka Link (${fullShortUrl})">
+              <a href="${cleanSlugUrl}" target="_blank" rel="noopener noreferrer" class="btn-icon" title="Buka Link (${safeFullShortUrl})">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
               </a>
             </div>
           </div>
         </td>
         <td>
-          <a href="${escapeHtml(link.targetUrl)}" target="_blank" rel="noopener noreferrer" class="target-url" title="${escapeHtml(link.targetUrl)}">
+          <a href="${safeTargetUrl}" target="_blank" rel="noopener noreferrer" class="target-url" title="${escapeHtml(link.targetUrl)}">
             ${escapeHtml(link.targetUrl)}
           </a>
         </td>
@@ -143,13 +149,13 @@ document.addEventListener("DOMContentLoaded", () => {
         </td>
         <td>
           <div class="table-actions">
-            <button class="btn-icon btn-qr" title="Lihat QR Code" data-slug="${escapeHtml(link.slug)}" data-url="${fullShortUrl}">
+            <button class="btn-icon btn-qr" title="Lihat QR Code" data-slug="${safeSlug}" data-url="${safeFullShortUrl}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </button>
-            <button class="btn-icon btn-edit" title="Edit Link Tujuan" data-id="${link.id}">
+            <button class="btn-icon btn-edit" title="Edit Link Tujuan" data-id="${safeId}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
             </button>
-            <button class="btn-icon danger btn-delete" title="Hapus Link" data-id="${link.id}" data-slug="${escapeHtml(link.slug)}">
+            <button class="btn-icon danger btn-delete" title="Hapus Link" data-id="${safeId}" data-slug="${safeSlug}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
             </button>
           </div>

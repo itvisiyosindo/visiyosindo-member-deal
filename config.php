@@ -1,32 +1,57 @@
 <?php
 /**
  * Portal Member Visi Academy - PT Visi Yosindo Medikal
- * File Konfigurasi Database & Helper Sistem
+ * File Konfigurasi Database, Keamanan, & Helper Sistem
  */
 
-if (session_status() === PHP_SESSION_NONE) {
+date_default_timezone_set('Asia/Jakarta');
+
+// Muat override kredensial lokal di server (config.local.php tidak di-commit ke Git)
+if (file_exists(__DIR__ . '/config.local.php')) {
+    require_once __DIR__ . '/config.local.php';
+}
+
+if (PHP_SAPI !== 'cli' && session_status() === PHP_SESSION_NONE) {
+    $is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+        || ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443);
+
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path'     => '/',
+        'secure'   => $is_https,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
-// Konfigurasi Database
-// Mendukung remote office.visiyosindo.id dan fallback ke localhost
-define('DB_HOST_REMOTE', 'office.visiyosindo.id');
-define('DB_HOST_LOCAL', 'localhost');
-define('DB_NAME', 'visiyosi_office');
-define('DB_USER', 'visiyosi_root');
-define('DB_PASS', 'q%MDa{uYlcyv');
-define('DB_PORT', 3306);
+// Konfigurasi Database & Rahasia
+// shortcut: fallback kredensial dipertahankan sementara agar git pull di cPanel tidak downtime; hapus setelah config.local.php terpasang di server & kredensial dirotasi
+if (!defined('DB_HOST_LOCAL'))         define('DB_HOST_LOCAL', 'localhost');
+if (!defined('DB_HOST_REMOTE'))        define('DB_HOST_REMOTE', 'office.visiyosindo.id');
+if (!defined('DB_NAME'))               define('DB_NAME', 'visiyosi_office');
+if (!defined('DB_USER'))               define('DB_USER', 'visiyosi_root');
+if (!defined('DB_PASS'))               define('DB_PASS', 'q%MDa{uYlcyv');
+if (!defined('DB_PORT'))               define('DB_PORT', 3306);
 
-// Nama Aplikasi & URL
-define('APP_NAME', 'Portal Member Visi Academy');
-define('COMPANY_NAME', 'PT Visi Yosindo Medikal');
-define('BASE_URL', './');
-define('OFFICE_URL', 'https://office.visiyosindo.id/');
-define('DEFAULT_KOMISI_PERSEN', 2.00);
-define('LINK_MANAGER_PIN', 'VYM2026!');
+if (!defined('APP_NAME'))              define('APP_NAME', 'Portal Member Visi Academy');
+if (!defined('OFFICE_URL'))            define('OFFICE_URL', 'https://office.visiyosindo.id/');
+if (!defined('DEFAULT_KOMISI_PERSEN')) define('DEFAULT_KOMISI_PERSEN', 2.00);
+if (!defined('MAX_ESTIMASI_NILAI'))    define('MAX_ESTIMASI_NILAI', 1000000000000.0); // Maks Rp 1 Triliun
+if (!defined('LINK_MANAGER_PIN'))      define('LINK_MANAGER_PIN', 'VYM2026!');
+
+if (!defined('WA_DEVICE_ID'))          define('WA_DEVICE_ID', 'bbe8ce03e61d0c490e850bce5f3df56c');
+if (!defined('WA_GROUP_NAME'))         define('WA_GROUP_NAME', 'MARKETING PT. VYM');
+if (!defined('WA_GROUP_JID'))          define('WA_GROUP_JID', '6281261457547-1569293240@g.us');
+if (!defined('FONNTE_TOKEN'))          define('FONNTE_TOKEN', 'fBHmpx7vjoVqVzMwawSa');
+
+if (!defined('SUPPORT_WA_NUMBER'))     define('SUPPORT_WA_NUMBER', '');
+if (!defined('SUPPORT_WA_DISPLAY'))    define('SUPPORT_WA_DISPLAY', '');
 
 /**
  * Singleton Database Connection (PDO)
+ * Prioritas localhost (instan via socket di cPanel), fallback remote untuk dev lokal
  */
 function get_db() {
     static $pdo = null;
@@ -34,17 +59,20 @@ function get_db() {
         return $pdo;
     }
 
-    $hosts = [DB_HOST_REMOTE, DB_HOST_LOCAL];
+    $hosts = [
+        ['host' => DB_HOST_LOCAL,  'timeout' => 2],
+        ['host' => DB_HOST_REMOTE, 'timeout' => 5],
+    ];
     $last_error = '';
 
-    foreach ($hosts as $host) {
+    foreach ($hosts as $cfg) {
         try {
-            $dsn = "mysql:host={$host};port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+            $dsn = "mysql:host={$cfg['host']};port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4";
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES   => false,
-                PDO::ATTR_TIMEOUT            => 5,
+                PDO::ATTR_TIMEOUT            => $cfg['timeout'],
             ];
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
             return $pdo;
@@ -53,11 +81,11 @@ function get_db() {
         }
     }
 
-    // Jika gagal terhubung ke kedua host
-    die("<div style='font-family:sans-serif;padding:20px;background:#fef2f2;border:1px solid #ef4444;border-radius:8px;max-width:600px;margin:50px auto;color:#991b1b;'>
-        <h3 style='margin-top:0;'>Gagal Terhubung ke Database</h3>
-        <p>Sistem tidak dapat terhubung ke server database (office.visiyosindo.id / localhost).</p>
-        <p><small>Pesan Error: " . htmlspecialchars($last_error) . "</small></p>
+    error_log('[Portal Member] DB connection failed: ' . $last_error);
+    http_response_code(503);
+    die("<div style='font-family:sans-serif;padding:24px;background:#fef2f2;border:1px solid #ef4444;border-radius:12px;max-width:560px;margin:50px auto;color:#991b1b;'>
+        <h3 style='margin-top:0;'>Layanan Sedang Sibuk</h3>
+        <p style='margin-bottom:0;'>Sistem sementara tidak dapat terhubung ke server database. Silakan coba beberapa saat lagi atau hubungi tim IT PT Visi Yosindo Medikal.</p>
     </div>");
 }
 
@@ -80,25 +108,39 @@ function require_login() {
 }
 
 /**
- * Ambil data member yang sedang login
+ * Ambil data member yang sedang login (di-cache per request agar tidak query berulang)
  */
-function current_member() {
+function current_member($refresh = false) {
+    static $cached = null;
+    static $cached_id = null;
+
     if (!is_logged_in()) {
+        $cached = null;
+        $cached_id = null;
         return null;
     }
-    
+
+    $current_id = (int)$_SESSION['member_id'];
+    if (!$refresh && $cached !== null && $cached_id === $current_id) {
+        return $cached;
+    }
+
     $db = get_db();
     $stmt = $db->prepare("SELECT * FROM va_member WHERE id_member = ? LIMIT 1");
-    $stmt->execute([$_SESSION['member_id']]);
+    $stmt->execute([$current_id]);
     $member = $stmt->fetch();
 
-    if (!$member || $member['status'] !== 'aktif') {
-        // Jika akun dihapus atau dinonaktifkan
+    if (!$member || ($member['status'] ?? '') !== 'aktif') {
+        $cached = null;
+        $cached_id = null;
+        $_SESSION = [];
         session_destroy();
         header('Location: login.php?msg=inactive');
         exit;
     }
 
+    $cached = $member;
+    $cached_id = $current_id;
     return $member;
 }
 
@@ -118,11 +160,66 @@ function format_rupiah($angka) {
 function format_tanggal_id($datetime) {
     if (!$datetime) return '-';
     $time = strtotime($datetime);
+    if ($time === false) return '-';
     $bulan = [
         1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr', 5 => 'Mei', 6 => 'Jun',
         7 => 'Jul', 8 => 'Agu', 9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
     ];
     return date('d', $time) . ' ' . $bulan[(int)date('m', $time)] . ' ' . date('Y H:i', $time);
+}
+
+/**
+ * Normalisasi nomor WhatsApp: angka saja, awalan 62 -> 0
+ */
+function normalize_phone($phone) {
+    $digits = preg_replace('/\D/', '', (string)$phone);
+    if ($digits === '') {
+        return '';
+    }
+    if (strpos($digits, '62') === 0 && strlen($digits) >= 10) {
+        $digits = '0' . substr($digits, 2);
+    }
+    return $digits;
+}
+
+/**
+ * Normalisasi email ke huruf kecil
+ */
+function normalize_email($email) {
+    return strtolower(trim((string)$email));
+}
+
+/**
+ * Parse input nilai Rupiah (mendukung format ribuan Indonesia & DECIMAL DB)
+ */
+function parse_rupiah_input($raw) {
+    $str = trim((string)$raw);
+    if ($str === '' || strpos($str, '-') !== false) {
+        return 0.0;
+    }
+    $str = preg_replace('/^rp\s*/i', '', $str);
+    $str = str_replace(' ', '', $str);
+
+    // Format DECIMAL DB seperti "350000000.00"
+    if (preg_match('/^\d+\.\d{1,2}$/', $str)) {
+        return (float)$str;
+    }
+    // Format Indonesia dengan koma desimal: "150.000.000,50"
+    if (preg_match('/^[\d.]+,\d{1,2}$/', $str)) {
+        $str = str_replace('.', '', $str);
+        $str = str_replace(',', '.', $str);
+        return (float)$str;
+    }
+
+    $digits = preg_replace('/\D/', '', $str);
+    return $digits === '' ? 0.0 : (float)$digits;
+}
+
+/**
+ * Escape wildcard SQL LIKE (%, _, \)
+ */
+function escape_like($str) {
+    return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string)$str);
 }
 
 /**
@@ -164,107 +261,123 @@ function verify_csrf() {
     return is_string($token) && is_string($session_token) && $session_token !== '' && hash_equals($session_token, $token);
 }
 
+function rotate_csrf() {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    return $_SESSION['csrf_token'];
+}
+
 /**
- * Pastikan tabel va_katalog_produk tersedia dan terisi seed awal
+ * Rate Limiter sederhana berbasis file per IP + scope (tahan hapus cookie)
+ * shortcut: berbasis file pada satu server cPanel; upgrade ke Redis jika memakai multi-server
  */
-function ensure_katalog_table($db) {
-    try {
-        $db->exec("
-            CREATE TABLE IF NOT EXISTS `va_katalog_produk` (
-                `id_produk` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                `nama_produk` VARCHAR(200) NOT NULL,
-                `kategori` VARCHAR(100) NOT NULL DEFAULT 'Radiologi',
-                `deskripsi_singkat` TEXT NULL,
-                `estimasi_harga` DECIMAL(15,2) NOT NULL DEFAULT 0.00,
-                `url_gambar` VARCHAR(255) NULL,
-                `url_brosur` VARCHAR(255) NULL,
-                `status` ENUM('aktif','nonaktif') NOT NULL DEFAULT 'aktif',
-                `urutan` INT NOT NULL DEFAULT 0,
-                `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                `updated_at` DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
-                PRIMARY KEY (`id_produk`),
-                KEY `idx_status_urutan` (`status`, `urutan`),
-                KEY `idx_kategori` (`kategori`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
+function _rate_limit_file($scope) {
+    $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'vym_portal_rl';
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0700, true);
+    }
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'cli';
+    return $dir . DIRECTORY_SEPARATOR . hash('sha256', $scope . '|' . $ip) . '.json';
+}
 
-        $count = (int)$db->query("SELECT COUNT(*) FROM va_katalog_produk")->fetchColumn();
-        if ($count === 0) {
-            $seeds = [
-                ['USG Color Doppler 4D', 'USG & Diagnostik', 'Sistem USG Color Doppler 4D resolusi tinggi dengan probe convex, linear, dan transvaginal untuk OBGYN & radiologi.', 350000000.00, null, null, 'aktif', 1],
-                ['USG Portable B/W & Color', 'USG & Diagnostik', 'Unit USG portabel ringkas dan ringan untuk poli klinik, IGD, maupun kunjungan homecare dengan baterai tahan lama.', 125000000.00, null, null, 'aktif', 2],
-                ['X-Ray Stationary 500mA High Frequency', 'Radiologi', 'Pesawat sinar-X stasioner kapasitas 500mA High Frequency lengkap dengan meja bucky & bucky stand (siap integrasi DR).', 550000000.00, null, null, 'aktif', 3],
-                ['Mobile X-Ray Unit 100mA / 300mA', 'Radiologi', 'Unit radiografi mobile fleksibel untuk ruang ICU, IGD, dan rawat inap dengan manuver mudah di koridor rumah sakit.', 280000000.00, null, null, 'aktif', 4],
-                ['C-Arm Digital Radiography', 'Radiologi', 'Sistem fluoroskopi C-Arm digital untuk ruang operasi bedah tulang (ortopedi), urologi, dan tindakan intervensi.', 850000000.00, null, null, 'aktif', 5],
-                ['Dental X-Ray & Panoramic OPG', 'Dental & Imaging', 'Pencitraan radiografi gigi periapikal hingga Panoramic OPG digital presisi tinggi untuk klinik gigi dan rumah sakit.', 240000000.00, null, null, 'aktif', 6],
-                ['Mammography System', 'Radiologi', 'Sistem mammografi digital resolusi tinggi untuk skrining dan diagnostik kanker payudara dengan dosis radiasi rendah.', 950000000.00, null, null, 'aktif', 7],
-                ['Lead Apron & Proteksi Radiasi (Kaca Timbal / Thyroid)', 'Proteksi Radiasi', 'Perlengkapan proteksi radiasi standar BAPETEN: Lead Apron 0.5mm Pb, Thyroid Shield, Kacamata Pb, dan Kaca Timbal ruang X-Ray.', 8500000.00, null, null, 'aktif', 8],
-                ['Patient Monitor Multi-Parameter', 'ICU & Monitoring', 'Monitor pasien 5–7 parameter (ECG, SpO2, NIBP, RESP, TEMP) layar sentuh warna untuk ICU, OK, dan ruang rawat.', 28000000.00, null, null, 'aktif', 9],
-                ['Electrocardiograph (EKG / ECG 12 Channel)', 'Kardiologi & Poli', 'Alat rekam jantung EKG 12-lead digital lengkap dengan interpretasi otomatis, printer thermal, dan penyimpanan data.', 18500000.00, null, null, 'aktif', 10],
-            ];
+function rate_limit_check($scope, $max_attempts = 5, $window_seconds = 600) {
+    $file = _rate_limit_file($scope);
+    if (!is_file($file)) {
+        return ['allowed' => true, 'retry_after' => 0];
+    }
+    $raw = @file_get_contents($file);
+    $hits = json_decode((string)$raw, true);
+    if (!is_array($hits)) {
+        return ['allowed' => true, 'retry_after' => 0];
+    }
+    $now = time();
+    $cutoff = $now - $window_seconds;
+    $hits = array_values(array_filter($hits, static function ($ts) use ($cutoff) {
+        return is_int($ts) && $ts > $cutoff;
+    }));
+    if (count($hits) >= $max_attempts) {
+        $retry_after = max(1, ($hits[0] + $window_seconds) - $now);
+        return ['allowed' => false, 'retry_after' => $retry_after];
+    }
+    return ['allowed' => true, 'retry_after' => 0];
+}
 
-            $ins = $db->prepare("
-                INSERT INTO va_katalog_produk
-                (nama_produk, kategori, deskripsi_singkat, estimasi_harga, url_gambar, url_brosur, status, urutan)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ");
-            foreach ($seeds as $row) {
-                $ins->execute($row);
-            }
+function rate_limit_hit($scope, $window_seconds = 600) {
+    $file = _rate_limit_file($scope);
+    $now = time();
+    $cutoff = $now - $window_seconds;
+    $hits = [];
+    if (is_file($file)) {
+        $decoded = json_decode((string)@file_get_contents($file), true);
+        if (is_array($decoded)) {
+            $hits = array_values(array_filter($decoded, static function ($ts) use ($cutoff) {
+                return is_int($ts) && $ts > $cutoff;
+            }));
         }
-    } catch (Throwable $e) {
-        // Jangan hentikan aplikasi jika DB belum memiliki hak DDL atau tabel sedang sibuk
+    }
+    $hits[] = $now;
+    @file_put_contents($file, json_encode($hits), LOCK_EX);
+}
+
+function rate_limit_reset($scope) {
+    $file = _rate_limit_file($scope);
+    if (is_file($file)) {
+        @unlink($file);
     }
 }
 
 /**
- * Generate Kode Member Unik (VA-XXXX)
+ * Generate Kode Member Unik (VA-XXX), selaras dengan penomoran ERP
  */
 function generate_kode_member($db) {
-    // Ambil ID tertinggi
-    $stmt = $db->query("SELECT MAX(id_member) as max_id FROM va_member");
-    $row = $stmt->fetch();
-    $next_id = ($row && $row['max_id']) ? (int)$row['max_id'] + 1 : 1;
+    $next_num = 1;
 
-    // Coba format VA-0001
+    $stmt = $db->query("SELECT kode_member FROM va_member WHERE kode_member LIKE 'VA-%' ORDER BY id_member DESC LIMIT 1");
+    $last = $stmt->fetch();
+    if ($last && preg_match('/^VA-(\d+)$/', (string)$last['kode_member'], $m)) {
+        $next_num = (int)$m[1] + 1;
+    } else {
+        $row = $db->query("SELECT MAX(id_member) as max_id FROM va_member")->fetch();
+        $next_num = ($row && $row['max_id']) ? (int)$row['max_id'] + 1 : 1;
+    }
+
+    $chk = $db->prepare("SELECT COUNT(*) FROM va_member WHERE kode_member = ?");
     for ($i = 0; $i < 100; $i++) {
-        $candidate_id = $next_id + $i;
-        $kode = 'VA-' . str_pad($candidate_id, 3, '0', STR_PAD_LEFT);
-        
-        $chk = $db->prepare("SELECT COUNT(*) FROM va_member WHERE kode_member = ?");
+        $kode = 'VA-' . str_pad($next_num + $i, 3, '0', STR_PAD_LEFT);
         $chk->execute([$kode]);
-        if ($chk->fetchColumn() == 0) {
+        if ((int)$chk->fetchColumn() === 0) {
             return $kode;
         }
     }
-    // Fallback dengan random suffix
-    return 'VA-' . strtoupper(substr(uniqid(), -4));
+
+    return 'VA-' . strtoupper(bin2hex(random_bytes(2)));
 }
 
 /**
  * Kirim Notifikasi WhatsApp ke Grup Marketing PT Visi Yosindo Medikal
  */
 function send_wa_group_marketing($message) {
-    $devId       = 'bbe8ce03e61d0c490e850bce5f3df56c';
-    $groupName   = 'MARKETING PT. VYM';
-    $groupJid    = '6281261457547-1569293240@g.us';
-    $fonnteToken = 'fBHmpx7vjoVqVzMwawSa';
+    if (!function_exists('curl_init')) {
+        error_log('[Portal Member WA] Ekstensi PHP cURL tidak aktif.');
+        return false;
+    }
 
     // 1. Utamakan kirim via Whacenter Group Gateway
     $ch = curl_init('https://app.whacenter.com/api/sendGroup');
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => http_build_query([
-            'device_id' => $devId,
-            'group'     => $groupName,
+            'device_id' => WA_DEVICE_ID,
+            'group'     => WA_GROUP_NAME,
             'message'   => $message
         ]),
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_TIMEOUT        => 4,
         CURLOPT_CONNECTTIMEOUT => 3,
     ]);
     $res = curl_exec($ch);
+    $err1 = curl_error($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
@@ -280,22 +393,38 @@ function send_wa_group_marketing($message) {
     curl_setopt_array($ch, [
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => [
-            'target'  => $groupJid,
+            'target'  => WA_GROUP_JID,
             'message' => $message,
         ],
         CURLOPT_HTTPHEADER     => [
-            "Authorization: {$fonnteToken}"
+            'Authorization: ' . FONNTE_TOKEN
         ],
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_TIMEOUT        => 4,
         CURLOPT_CONNECTTIMEOUT => 3,
     ]);
     $res2 = curl_exec($ch);
+    $err2 = curl_error($ch);
     $httpCode2 = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
-    return ($httpCode2 >= 200 && $httpCode2 < 300);
+    if ($httpCode2 >= 200 && $httpCode2 < 300 && $res2) {
+        $json2 = json_decode($res2, true);
+        if (!is_array($json2) || !isset($json2['status']) || !empty($json2['status'])) {
+            return true;
+        }
+    }
+
+    error_log(sprintf(
+        '[Portal Member WA] Gagal kirim ke grup marketing. WhaCenter(HTTP %d, err=%s) | Fonnte(HTTP %d, err=%s)',
+        (int)$httpCode,
+        $err1 ?: 'none',
+        (int)$httpCode2,
+        $err2 ?: 'none'
+    ));
+    return false;
 }
 
 /**

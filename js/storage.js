@@ -2,27 +2,26 @@
 const Storage = (() => {
   const LOCAL_STORAGE_KEY = "visiyosindo_links_data";
 
-  // Data contoh awal
-  const defaultLinks = [
-    {
-      id: "link-1",
-      title: "WhatsApp Customer Service",
-      slug: "wa-admin",
-      targetUrl: "https://wa.me/6281234567890?text=Halo%20Visiyosindo,%20saya%20tertarik%20dengan%20layanan%20Anda",
-      clicks: 42,
-      createdAt: "2026-09-23T10:00:00.000Z",
-      updatedAt: "2026-09-23T10:00:00.000Z"
-    },
-    {
-      id: "link-2",
-      title: "Katalog Produk & Portofolio",
-      slug: "katalog",
-      targetUrl: "https://drive.google.com/file/d/1example-portfolio-visiyosindo/view",
-      clicks: 128,
-      createdAt: "2026-09-23T10:00:00.000Z",
-      updatedAt: "2026-09-23T10:00:00.000Z"
+  // Kosong agar tidak pernah mengarahkan pengunjung ke URL/nomor contoh palsu saat cloud gangguan
+  const defaultLinks = [];
+
+  function sanitizeHttpUrl(rawUrl) {
+    const trimmed = String(rawUrl || "").trim();
+    if (!trimmed) throw new Error("URL Tujuan tidak boleh kosong!");
+    if (/^(javascript|data|vbscript):/i.test(trimmed)) {
+      throw new Error("URL tujuan tidak diizinkan! Gunakan alamat http:// atau https://.");
     }
-  ];
+    const normalized = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    try {
+      const parsed = new URL(normalized);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new Error("Protokol tidak valid");
+      }
+      return parsed.href;
+    } catch (e) {
+      throw new Error("Format URL tujuan tidak valid!");
+    }
+  }
 
   // Inisialisasi Supabase client
   function initSupabase() {
@@ -59,30 +58,6 @@ const Storage = (() => {
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-
-        // Auto-sinkronisasi data lama dari browser lokal jika ada yang belum masuk ke database Supabase
-        try {
-          const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-          if (stored) {
-            const localList = JSON.parse(stored);
-            if (Array.isArray(localList) && localList.length > 0) {
-              const existingSlugs = new Set((data || []).map(d => (d.slug || "").toLowerCase().trim()));
-              for (const l of localList) {
-                const lSlug = (l.slug || "").toLowerCase().trim();
-                if (lSlug && !existingSlugs.has(lSlug)) {
-                  await window.supabaseClient.from(CONFIG.supabase.tableName).insert([{
-                    id: l.id || "link-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
-                    title: l.title || l.slug,
-                    slug: l.slug,
-                    target_url: l.targetUrl || l.target_url,
-                    clicks: l.clicks || 0
-                  }]);
-                  existingSlugs.add(lSlug);
-                }
-              }
-            }
-          }
-        } catch (syncErr) {}
 
         const mapped = (data || []).map(item => ({
           id: item.id,
@@ -153,9 +128,7 @@ const Storage = (() => {
   async function createLink({ title, slug, targetUrl }) {
     const cleanSlug = slug.trim().replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_]/g, "");
     if (!cleanSlug) throw new Error("Slug / Alias tidak boleh kosong!");
-    if (!targetUrl) throw new Error("URL Tujuan tidak boleh kosong!");
-
-    const cleanUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
+    const cleanUrl = sanitizeHttpUrl(targetUrl);
 
     // Cek duplikasi slug
     const existing = await getLinkBySlug(cleanSlug);
@@ -200,7 +173,8 @@ const Storage = (() => {
   // Mengubah link yang sudah ada
   async function updateLink(id, { title, slug, targetUrl }) {
     const cleanSlug = slug.trim().replace(/\s+/g, "-").replace(/[^a-zA-Z0-9-_]/g, "");
-    const cleanUrl = targetUrl.startsWith("http") ? targetUrl : `https://${targetUrl}`;
+    if (!cleanSlug) throw new Error("Slug / Alias tidak boleh kosong!");
+    const cleanUrl = sanitizeHttpUrl(targetUrl);
 
     const links = await getAllLinks();
     const existingWithSameSlug = links.find(l => (l.slug || "").toLowerCase().trim() === cleanSlug.toLowerCase() && l.id !== id);
@@ -285,7 +259,7 @@ const Storage = (() => {
     }
   }
 
-  // Ekspor / Impor JSON cadangan
+  // Ekspor JSON cadangan
   function exportData() {
     initLocalStorage();
     const data = localStorage.getItem(LOCAL_STORAGE_KEY) || "[]";
@@ -298,17 +272,6 @@ const Storage = (() => {
     URL.revokeObjectURL(url);
   }
 
-  function importData(jsonString) {
-    try {
-      const parsed = JSON.parse(jsonString);
-      if (!Array.isArray(parsed)) throw new Error("Format JSON harus berupa daftar array.");
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsed));
-      return true;
-    } catch (e) {
-      throw new Error("File JSON tidak valid: " + e.message);
-    }
-  }
-
   return {
     getAllLinks,
     getLinkBySlug,
@@ -316,7 +279,6 @@ const Storage = (() => {
     updateLink,
     deleteLink,
     incrementClicks,
-    exportData,
-    importData
+    exportData
   };
 })();

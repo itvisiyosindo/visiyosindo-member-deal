@@ -95,11 +95,11 @@ $flash = get_flash();
                     <div class="hidden md:flex items-center gap-3">
                         <div class="text-right">
                             <div class="text-xs font-semibold text-white leading-tight">
-                                <?= htmlspecialchars($logged_member['nama_member']) ?>
+                                <?= htmlspecialchars((string)($logged_member['nama_member'] ?? '')) ?>
                             </div>
                             <div class="flex items-center justify-end gap-1.5 mt-0.5">
                                 <span class="bg-vym-900 text-vym-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-vym-700/60 font-mono">
-                                    <?= htmlspecialchars($logged_member['kode_member']) ?>
+                                    <?= htmlspecialchars((string)($logged_member['kode_member'] ?? '')) ?>
                                 </span>
                             </div>
                         </div>
@@ -131,8 +131,8 @@ $flash = get_flash();
             <!-- Mobile Menu Dropdown -->
             <div id="mobileMenu" class="hidden md:hidden bg-navy-950 border-t border-slate-800 px-4 pt-3 pb-4 space-y-1">
                 <div class="pb-3 border-b border-slate-800 mb-2">
-                    <div class="font-semibold text-white text-sm"><?= htmlspecialchars($logged_member['nama_member']) ?></div>
-                    <div class="text-xs text-vym-300"><?= htmlspecialchars($logged_member['kode_member']) ?> • <?= htmlspecialchars($logged_member['institusi_asal'] ?: 'Member Visi Academy') ?></div>
+                    <div class="font-semibold text-white text-sm"><?= htmlspecialchars((string)($logged_member['nama_member'] ?? '')) ?></div>
+                    <div class="text-xs text-vym-300"><?= htmlspecialchars((string)($logged_member['kode_member'] ?? '')) ?> • <?= htmlspecialchars((string)(($logged_member['institusi_asal'] ?? '') ?: 'Member Visi Academy')) ?></div>
                 </div>
                 <a href="dashboard.php" class="block px-3 py-2 rounded-md text-sm font-medium <?= $current_page === 'dashboard.php' ? 'bg-vym-600 text-white' : 'text-slate-300 hover:bg-slate-800' ?>">
                     <i class="fa-solid fa-chart-pie mr-2"></i> Dashboard

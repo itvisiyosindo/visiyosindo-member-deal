@@ -73,8 +73,8 @@
 
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/js/config.js?v=8"></script>
-  <script src="/js/storage.js?v=8"></script>
+  <script src="/js/config.js?v=9"></script>
+  <script src="/js/storage.js?v=9"></script>
   <script>
     (async function handleRedirect() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -99,15 +99,24 @@
         const link = await Storage.getLinkBySlug(slug);
 
         if (link && link.targetUrl) {
-          Storage.incrementClicks(slug);
-          window.location.replace(link.targetUrl);
+          const safeUrl = String(link.targetUrl).trim();
+          if (!/^https?:\/\//i.test(safeUrl)) {
+            showError("Tautan Tidak Valid", "Alamat tujuan tautan tidak menggunakan protokol http/https yang aman.");
+            return;
+          }
+          // Tunggu sebentar (maks 450ms) agar hitungan klik sempat tercatat sebelum pindah halaman
+          await Promise.race([
+            Storage.incrementClicks(slug),
+            new Promise((resolve) => setTimeout(resolve, 450))
+          ]);
+          window.location.replace(safeUrl);
           return;
         }
 
         showError("Link Tidak Ditemukan", `Tautan "/${slug}" belum dibuat atau sudah dihapus.`);
       } catch (err) {
         console.error(err);
-        showError("Terjadi Kesalahan", err.message);
+        showError("Terjadi Kesalahan", "Gagal memuat tujuan tautan. Silakan coba beberapa saat lagi.");
       }
 
       function showError(title, message) {

@@ -19,23 +19,33 @@ $form = [
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form['nama_member'] = trim($_POST['nama_member'] ?? '');
-    $form['no_telp'] = trim($_POST['no_telp'] ?? '');
-    $form['email'] = trim($_POST['email'] ?? '');
+    $form['no_telp'] = normalize_phone($_POST['no_telp'] ?? '');
+    $form['email'] = normalize_email($_POST['email'] ?? '');
     $form['institusi_asal'] = trim($_POST['institusi_asal'] ?? '');
     $form['nama_bank'] = trim($_POST['nama_bank'] ?? '');
     $form['no_rekening'] = trim($_POST['no_rekening'] ?? '');
     $form['atas_nama_rekening'] = trim($_POST['atas_nama_rekening'] ?? '');
-    
+
     $password = $_POST['password'] ?? '';
     $password_confirm = $_POST['password_confirm'] ?? '';
+    $rl = rate_limit_check('register', 5, 600);
 
-    // Validasi Dasar & CSRF
+    // Validasi Dasar, Panjang Kolom DB, Rate Limit & CSRF
     if (!verify_csrf()) {
         $error = 'Sesi formulir tidak valid atau kedaluwarsa. Silakan muat ulang halaman dan coba lagi.';
+    } elseif (!$rl['allowed']) {
+        $menit = (int)ceil($rl['retry_after'] / 60);
+        $error = "Terlalu banyak percobaan pendaftaran. Silakan coba lagi dalam {$menit} menit.";
     } elseif (empty($form['nama_member']) || empty($form['no_telp']) || empty($form['email']) || empty($password)) {
         $error = 'Nama Lengkap, No. WhatsApp, Email, dan Password wajib diisi.';
-    } elseif (!filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
-        $error = 'Format email tidak valid.';
+    } elseif (strlen($form['no_telp']) < 9 || strlen($form['no_telp']) > 15) {
+        $error = 'Nomor WhatsApp harus terdiri dari 9 hingga 15 digit angka.';
+    } elseif (!filter_var($form['email'], FILTER_VALIDATE_EMAIL) || strlen($form['email']) > 100) {
+        $error = 'Format email tidak valid atau terlalu panjang.';
+    } elseif (mb_strlen($form['nama_member']) > 255 || mb_strlen($form['institusi_asal']) > 255) {
+        $error = 'Nama lengkap atau institusi maksimal 255 karakter.';
+    } elseif (mb_strlen($form['nama_bank']) > 50 || mb_strlen($form['no_rekening']) > 50 || mb_strlen($form['atas_nama_rekening']) > 100) {
+        $error = 'Data rekening melebihi batas panjang yang diizinkan.';
     } elseif (strlen($password) < 6) {
         $error = 'Password minimal harus 6 karakter.';
     } elseif ($password !== $password_confirm) {
@@ -43,45 +53,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $db = get_db();
 
-        // Cek duplikasi No. Telp atau Email
-        $chk = $db->prepare("SELECT id_member FROM va_member WHERE no_telp = ? OR email = ? LIMIT 1");
-        $chk->execute([$form['no_telp'], $form['email']]);
+        // Cek duplikasi No. Telp (termasuk format 08/628/strip) atau Email (case-insensitive)
+        $phone_alt = (strpos($form['no_telp'], '0') === 0) ? ('62' . substr($form['no_telp'], 1)) : $form['no_telp'];
+        $chk = $db->prepare("
+            SELECT id_member FROM va_member
+            WHERE LOWER(email) = ?
+               OR REPLACE(REPLACE(REPLACE(no_telp, '-', ''), ' ', ''), '+', '') IN (?, ?)
+            LIMIT 1
+        ");
+        $chk->execute([$form['email'], $form['no_telp'], $phone_alt]);
         if ($chk->fetch()) {
             $error = 'Nomor WhatsApp atau Email sudah terdaftar sebelumnya. Silakan langsung login.';
         } else {
-            // Generate Kode Member
-            $kode_member = generate_kode_member($db);
             $hash_password = password_hash($password, PASSWORD_DEFAULT);
-
-            // Simpan ke database
             $insert = $db->prepare("
-                INSERT INTO va_member 
+                INSERT INTO va_member
                 (kode_member, nama_member, no_telp, email, password, institusi_asal, nama_bank, no_rekening, atas_nama_rekening, status, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif', NOW())
             ");
 
-            try {
-                $insert->execute([
-                    $kode_member,
-                    $form['nama_member'],
-                    $form['no_telp'],
-                    $form['email'],
-                    $hash_password,
-                    $form['institusi_asal'],
-                    $form['nama_bank'],
-                    $form['no_rekening'],
-                    $form['atas_nama_rekening']
-                ]);
+            // Retry hingga 3x jika terjadi bentrok UNIQUE kode_member pada pendaftaran bersamaan
+            $new_id = 0;
+            $kode_member = '';
+            $saved = false;
+            for ($attempt = 0; $attempt < 3; $attempt++) {
+                $kode_member = generate_kode_member($db);
+                try {
+                    $insert->execute([
+                        $kode_member,
+                        $form['nama_member'],
+                        $form['no_telp'],
+                        $form['email'],
+                        $hash_password,
+                        $form['institusi_asal'],
+                        $form['nama_bank'],
+                        $form['no_rekening'],
+                        $form['atas_nama_rekening']
+                    ]);
+                    $new_id = (int)$db->lastInsertId();
+                    $saved = true;
+                    break;
+                } catch (PDOException $e) {
+                    if ($e->getCode() === '23000' && $attempt < 2) {
+                        continue;
+                    }
+                    error_log('[Portal Member Register] DB insert failed: ' . $e->getMessage());
+                    $error = 'Terjadi kendala saat menyimpan pendaftaran. Silakan coba beberapa saat lagi.';
+                    break;
+                }
+            }
 
-                $new_id = $db->lastInsertId();
-
-                // Auto Login
+            if ($saved && $new_id > 0) {
+                rate_limit_hit('register', 600);
+                session_regenerate_id(true);
+                rotate_csrf();
                 $_SESSION['member_id'] = $new_id;
-                $_SESSION['member_name'] = $form['nama_member'];
-                $_SESSION['member_code'] = $kode_member;
 
                 // Kirim notifikasi WA otomatis ke Grup Marketing PT Visi Yosindo Medikal
-                @notify_marketing_new_member([
+                notify_marketing_new_member([
                     'kode_member'    => $kode_member,
                     'nama_member'    => $form['nama_member'],
                     'no_telp'        => $form['no_telp'],
@@ -92,8 +121,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 set_flash('success', "Pendaftaran berhasil! Selamat bergabung di Portal Member Visi Academy. Kode Member Anda: $kode_member");
                 header('Location: dashboard.php');
                 exit;
-            } catch (PDOException $e) {
-                $error = 'Terjadi kesalahan sistem saat menyimpan data: ' . $e->getMessage();
             }
         }
     }
@@ -127,7 +154,7 @@ require_once __DIR__ . '/header.php';
                 </div>
             <?php endif; ?>
 
-            <form action="register.php" method="POST" class="space-y-6">
+            <form action="register.php" method="POST" id="registerForm" class="space-y-6">
                 <?= csrf_field() ?>
                 <!-- Data Pribadi & Kontak -->
                 <div>
@@ -250,7 +277,7 @@ require_once __DIR__ . '/header.php';
                 </div>
 
                 <div class="pt-2">
-                    <button type="submit" class="w-full bg-vym-600 hover:bg-vym-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-vym-600/25 transition flex items-center justify-center gap-2">
+                    <button type="submit" id="registerSubmitBtn" class="w-full bg-vym-600 hover:bg-vym-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 rounded-xl shadow-lg shadow-vym-600/25 transition flex items-center justify-center gap-2">
                         <i class="fa-solid fa-circle-check"></i> Daftar Sekarang
                     </button>
                 </div>
@@ -265,5 +292,16 @@ require_once __DIR__ . '/header.php';
         </div>
     </div>
 </div>
+
+<script>
+const regForm = document.getElementById('registerForm');
+const regBtn = document.getElementById('registerSubmitBtn');
+if (regForm && regBtn) {
+    regForm.addEventListener('submit', function () {
+        regBtn.disabled = true;
+        regBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses Pendaftaran...';
+    });
+}
+</script>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

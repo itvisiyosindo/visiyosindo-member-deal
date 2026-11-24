@@ -15,8 +15,7 @@ $stats_stmt = $db->prepare("
         COALESCE(SUM(CASE WHEN status_deal = 'Deal' THEN nominal_komisi ELSE 0 END), 0) as komisi_deal,
         COALESCE(SUM(CASE WHEN status_deal = 'Deal' AND status_bayar = 'Sudah Ditransfer' THEN nominal_komisi ELSE 0 END), 0) as komisi_tertransfer,
         COALESCE(SUM(CASE WHEN status_deal = 'Deal' AND (status_bayar = 'Belum Ditransfer' OR status_bayar IS NULL) THEN nominal_komisi ELSE 0 END), 0) as komisi_menunggu_transfer,
-        COALESCE(SUM(CASE WHEN status_deal = 'Pending' THEN nominal_komisi ELSE 0 END), 0) as komisi_pending,
-        COALESCE(SUM(estimasi_nilai), 0) as total_estimasi_nilai
+        COALESCE(SUM(CASE WHEN status_deal = 'Pending' THEN nominal_komisi ELSE 0 END), 0) as komisi_pending
     FROM va_member_deal 
     WHERE id_member = ?
 ");

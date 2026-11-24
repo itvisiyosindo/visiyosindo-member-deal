@@ -15,13 +15,17 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-6 text-xs text-slate-500">
-                    <span class="flex items-center gap-1.5">
-                        <i class="fa-solid fa-headset text-vym-600"></i>
-                        <span>Bantuan & Info: <strong class="text-slate-700">0812-xxxx-xxxx</strong></span>
-                    </span>
+                    <?php if (SUPPORT_WA_NUMBER !== ''): ?>
+                        <span class="flex items-center gap-1.5">
+                            <i class="fa-brands fa-whatsapp text-emerald-600 text-sm"></i>
+                            <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/\D/', '', SUPPORT_WA_NUMBER)) ?>" target="_blank" rel="noopener noreferrer" class="hover:text-vym-600 transition">
+                                Bantuan &amp; Info: <strong class="text-slate-700"><?= htmlspecialchars(SUPPORT_WA_DISPLAY ?: SUPPORT_WA_NUMBER) ?></strong>
+                            </a>
+                        </span>
+                    <?php endif; ?>
                     <span class="flex items-center gap-1.5">
                         <i class="fa-solid fa-globe text-vym-600"></i>
-                        <a href="https://visiyosindo.id" target="_blank" class="hover:text-vym-600 font-semibold transition">visiyosindo.id</a>
+                        <a href="https://visiyosindo.id" target="_blank" rel="noopener noreferrer" class="hover:text-vym-600 font-semibold transition">visiyosindo.id</a>
                     </span>
                     <span>&copy; <?= date('Y') ?> PT Visi Yosindo Medikal. All rights reserved.</span>
                 </div>

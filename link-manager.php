@@ -9,15 +9,23 @@ if (isset($_GET['lm_logout'])) {
 
 $lm_error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lm_action']) && $_POST['lm_action'] === 'unlock') {
+    $rl = rate_limit_check('link_manager_pin', 5, 600);
     if (!verify_csrf()) {
         $lm_error = 'Sesi formulir tidak valid. Silakan muat ulang halaman dan coba lagi.';
+    } elseif (!$rl['allowed']) {
+        $menit = (int)ceil($rl['retry_after'] / 60);
+        $lm_error = "Terlalu banyak percobaan PIN salah. Coba lagi dalam {$menit} menit.";
     } else {
         $pin_input = trim($_POST['lm_pin'] ?? '');
         if ($pin_input !== '' && hash_equals(LINK_MANAGER_PIN, $pin_input)) {
+            rate_limit_reset('link_manager_pin');
+            session_regenerate_id(true);
+            rotate_csrf();
             $_SESSION['lm_authenticated'] = true;
             header('Location: link-manager.php');
             exit;
         }
+        rate_limit_hit('link_manager_pin', 600);
         $lm_error = 'PIN akses salah. Silakan hubungi tim IT PT Visi Yosindo Medikal.';
     }
 }
@@ -288,10 +296,10 @@ endif;
   <!-- Supabase JS Client via CDN (untuk Cloud Database di GitHub Pages) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Konfigurasi -->
-  <script src="js/config.js?v=8"></script>
+  <script src="js/config.js?v=9"></script>
   <!-- Modul Penyimpanan -->
-  <script src="js/storage.js?v=8"></script>
+  <script src="js/storage.js?v=9"></script>
   <!-- Logika Dashboard -->
-  <script src="js/app.js?v=8"></script>
+  <script src="js/app.js?v=9"></script>
 </body>
 </html>
